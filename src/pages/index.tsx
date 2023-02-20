@@ -37,6 +37,7 @@ import mapboxgl from "mapbox-gl";
 import { assertDeclareExportAllDeclaration } from "@babel/types";
 
 import { GeoJsonProperties, MultiPolygon, Polygon } from "geojson";
+import { Set } from "typescript";
 
 function isTouchScreen() {
   return window.matchMedia("(hover: none)").matches;
@@ -211,7 +212,7 @@ data.rows.forEach((eachrow: any) => {
   sheltersperdist[eachrow.cd].add(String(eachrow.address));
 })
 
-    Object.entries(sheltersperdist).forEach(([cdnumber, shelterset]) => {
+    Object.entries(sheltersperdist).forEach(([cdnumber, shelterset]: [string, any]) => {
       locationcountperdist[cdnumber] = shelterset.size;
     })
 
