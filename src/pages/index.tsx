@@ -560,119 +560,14 @@ data.rows.forEach((eachrow: any) => {
           latitude: 34,
         },
         marker: true,
-      });
-
-      fetch("https://backend-beds-tracker-q73wor3ixa-uw.a.run.app/shelters")
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data);
-
-          sheltersperdistcompute(data);
-
-          const geojsonsdflsf = convertDataFromBackend(data);
-
-          map.addSource("sheltersv2", {
-            type: "geojson",
-            data: geojsonsdflsf,
-          });
-
-          setInterval(() => {
-            fetch(
-              "https://backend-beds-tracker-q73wor3ixa-uw.a.run.app/shelters"
-            )
-              .then((response) => response.json())
-              .then((data) => {
-                console.log(data);
-
-                sheltersperdistcompute(data);
-
-                const geojsonrefresh = convertDataFromBackend(data);
-
-                const sheltersource: any = map.getSource("sheltersv2");
-
-                if (sheltersource) {
-                  sheltersource.setData(geojsonrefresh);
-                }
-              });
-          }, 2000);
-
-          map.addLayer({
-            id: "shelterslayer",
-            type: "circle",
-            source: "sheltersv2",
-            paint: {
-              "circle-radius": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                10,
-                ["*", 1.2, ["ln", ["get", "total_beds"]]],
-                22,
-                ["*", 5, ["ln", ["get", "total_beds"]]],
-              ],
-              "circle-color": [
-                "interpolate",
-                ["linear"],
-                ["get", "occper"],
-                0,
-                "#76FF03",
-                0.8,
-                "#76FF03",
-                0.801,
-                "#FFFF00",
-                0.999,
-                "#FFFF00",
-                1,
-                "#ff0000",
-              ],
-              "circle-stroke-opacity": 0.9,
-              "circle-opacity": 0.9,
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "hsl(0, 12%, 13%)",
-            },
-          });
+      });         
 
           setdatasetloaded(true);
 
-          map.on("mousedown", "shelterslayer", (e: any) => {
-            setshelterselected(e.features[0]);
 
-            var affordablepoint: any = map.getSource("selected-shelter-point");
+         
 
-            var councildistpolygonfound = null;
-
-            affordablepoint.setData(councildistpolygonfound);
-
-            mapref.current.setLayoutProperty(
-              "points-selected-shelter-layer",
-              "visibility",
-              "visible"
-            );
-
-            map.moveLayer("points-selected-shelter-layer");
-          });
-
-          map.on("touchstart", "shelterslayer", (e: any) => {
-            popup.remove();
-            touchref.current = {
-              lngLat: e.lngLat,
-              time: Date.now(),
-            };
-          });
-
-          map.on("mouseleave", "shelterslayer", () => {
-            //check if the url query string "stopmouseleave" is true
-            //if it is, then don't do anything
-            //if it is not, then do the following
-            /*
-        map.getCanvas().style.cursor = '';
-        popup.remove();*/
-
-            if (urlParams.get("stopmouseleave") === null) {
-              map.getCanvas().style.cursor = "";
-              popup.remove();
-            }
-          });
+       
 
           map.on("mousedown", "councildistrictsselectlayer", (e: any) => {
             var sourceofcouncildistselect: any = map.getSource(
@@ -787,7 +682,7 @@ data.rows.forEach((eachrow: any) => {
             // based on the feature found.
             popup.setLngLat(coordinates).setHTML(description).addTo(map);
           });
-        });
+        
 
       var colormarker = new mapboxgl.Marker({
         color: "#41ffca",
@@ -1198,7 +1093,7 @@ data.rows.forEach((eachrow: any) => {
             name="viewport"
             content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
           />
-          <title>Shelter Beds Occupancy | Map</title>
+          <title>Unhoused Deaths in Los Angeles | Map</title>
           <meta property="og:type" content="website" />
           <meta name="twitter:site" content="@lacontroller" />
           <meta name="twitter:creator" content="@lacontroller" />
@@ -1206,7 +1101,7 @@ data.rows.forEach((eachrow: any) => {
           <meta
             name="twitter:title"
             key="twittertitle"
-            content="Shelter Beds Occupancy | Map"
+            content="Unhoused Deaths in Los Angeles | Map"
           ></meta>
           <meta
             name="twitter:description"
@@ -1225,7 +1120,7 @@ data.rows.forEach((eachrow: any) => {
 
           <meta
             property="og:url"
-            content="https://shelterbeds.lacontroller.io/"
+            content="https://unhouseddeaths.lacontroller.io/"
           />
           <meta property="og:type" content="website" />
           <meta property="og:title" content="Shelter Beds Occupancy | Map" />
@@ -1252,7 +1147,7 @@ data.rows.forEach((eachrow: any) => {
                 color: "#ffffff",
               }}
             >
-              <strong className="">Shelter Beds Occupancy</strong>
+              <strong className="">Unhoused Deaths in LA</strong>
             </div>
 
             <div
