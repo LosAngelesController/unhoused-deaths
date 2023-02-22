@@ -6,7 +6,7 @@ import { Fragment, createRef } from "react";
 import Slider from "rc-slider";
 import { titleCase } from "title-case";
 
-import {computeclosestcoordsfromevent } from '../components/getclosestcoordsfromevent'
+import { computeclosestcoordsfromevent } from "../components/getclosestcoordsfromevent";
 import { CloseButton } from "../components/CloseButton";
 import { signintrack, uploadMapboxTrack } from "../components/mapboxtrack";
 import TooltipSlider, { handleRender } from "../components/TooltipSlider";
@@ -197,26 +197,23 @@ const Home: NextPage = () => {
   };
 
   const sheltersperdistcompute = (data: any) => {
+    const sheltersperdist: any = {};
 
-   
+    const locationcountperdist: any = {};
 
-    const sheltersperdist:any = {
+    data.rows.forEach((eachrow: any) => {
+      if (typeof sheltersperdist[eachrow.cd] === "undefined") {
+        sheltersperdist[eachrow.cd] = new Set();
+      }
 
-    };
+      sheltersperdist[eachrow.cd].add(String(eachrow.address));
+    });
 
-    const locationcountperdist:any = {}
-
-data.rows.forEach((eachrow: any) => {
-  if (typeof sheltersperdist[eachrow.cd] === "undefined") {
-    sheltersperdist[eachrow.cd] = new Set();
-  }
-
-  sheltersperdist[eachrow.cd].add(String(eachrow.address));
-})
-
-    Object.entries(sheltersperdist).forEach(([cdnumber, shelterset]: [string, any]) => {
-      locationcountperdist[cdnumber] = shelterset.size;
-    })
+    Object.entries(sheltersperdist).forEach(
+      ([cdnumber, shelterset]: [string, any]) => {
+        locationcountperdist[cdnumber] = shelterset.size;
+      }
+    );
 
     setsheltersperdist(locationcountperdist);
 
@@ -510,113 +507,112 @@ data.rows.forEach((eachrow: any) => {
     window.addEventListener("resize", handleResize);
 
     map.on("load", () => {
+      map.addSource("deathssource", {
+        type: "geojson",
+        data: "/unhouseddeaths.geojson",
+      });
 
-    map.addSource("deathssource", {
-      type: 'geojson',
-      data: "/unhouseddeaths.geojson"
-    })
+      map.addLayer({
+        id: "deathsheatmap",
+        type: "heatmap",
+        source: "deathssource",
+        paint: {
+          "heatmap-color": [
+            "interpolate",
+            ["linear"],
+            ["heatmap-density"],
+            0,
+            "rgba(0, 0, 255, 0)",
+            0.1,
+            "royalblue",
+            0.3,
+            "cyan",
+            0.5,
+            "lime",
+            0.7,
+            "yellow",
+            1,
+            "red",
+          ],
+          "heatmap-opacity": 1,
+          "heatmap-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            0,
+            5,
+            11.6,
+            7,
+            15.76,
+            17,
+            22,
+            17,
+          ],
+          "heatmap-weight": 1,
+          "heatmap-intensity": 1,
+        },
+      });
 
-    map.addLayer({
-      'id': 'deathsheatmap',
-      'type': "heatmap",
-      'source': 'deathssource',
-      'paint': {
-        'heatmap-color': [
-          "interpolate",
-          ["linear"],
-          ["heatmap-density"],
-          0,
-          "rgba(0, 0, 255, 0)",
-          0.1,
-          "royalblue",
-          0.3,
-          "cyan",
-          0.5,
-          "lime",
-          0.7,
-          "yellow",
-          1,
-          "red"
-        ],
-        'heatmap-opacity': 1,
-        'heatmap-radius': [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          0,
-          5,
-          11.6,
-          7,
-          15.76,
-          17,
-          22,
-          17
-        ],
-        'heatmap-weight': 1,
-        'heatmap-intensity': 1
-      }
-    })
+      map.addLayer({
+        id: "deathsdots",
+        type: "circle",
+        source: "deathssource",
+        paint: {
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            0,
+            7,
+            22,
+            12,
+            30,
+            15,
+          ],
+          "circle-color": "hsl(60, 0%, 100%)",
+          "circle-opacity": 0,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            0,
+            "hsl(0, 0%, 58%)",
+            22,
+            "hsl(0, 4%, 60%)",
+          ],
+          "circle-stroke-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            11.46,
+            0,
+            13,
+            0.17,
+            15,
+            1,
+          ],
+        },
+        layout: {},
+      });
 
-    map.addLayer({
-      'id': 'deathsdots',
-      'type': "circle",
-      'source': 'deathssource',
-      'paint': {
-        'circle-radius': [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          0,
-          7,
-          22,
-          12,
-          30,
-          15
-        ],
-        'circle-color': "hsl(60, 0%, 100%)",
-        'circle-opacity': 0,
-        'circle-stroke-width': 2,
-        'circle-stroke-color': [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          0,
-          "hsl(0, 0%, 58%)",
-          22,
-          "hsl(0, 4%, 60%)"
-        ],
-        'circle-stroke-opacity': [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          11.46,
-          0,
-          13,
-          0.17,
-          15,
-          1
-        ]
-      },
-      'layout': {
+      //create mousedown trigger
+      map.on("mousedown", "deathsdots", (e) => {
+        console.log("mousedown", e, e.features);
+        if (e.features) {
+          const closestcoords = computeclosestcoordsfromevent(e);
 
-      }
-    });
+          const filteredfeatures = e.features.filter((feature: any) => {
+            return (
+              feature.geometry.coordinates[0] === closestcoords[0] &&
+              feature.geometry.coordinates[1] === closestcoords[1]
+            );
+          });
 
-    //create mousedown trigger
-    map.on("mousedown", "deathsdots", (e) => {
-      console.log('mousedown', e, e.features);
-      if (e.features) {
-        const closestcoords = computeclosestcoordsfromevent(e);
-
-        const filteredfeatures = e.features.filter((feature: any) => {
-          return feature.geometry.coordinates[0] === closestcoords[0] && feature.geometry.coordinates[1] === closestcoords[1];
-        });
-
-        if (filteredfeatures.length > 0) {
-
+          if (filteredfeatures.length > 0) {
+          }
         }
-      }
-    });
+      });
 
       // Create a popup, but don't add it to the map yet.
       const popup = new mapboxgl.Popup({
@@ -624,58 +620,96 @@ data.rows.forEach((eachrow: any) => {
         closeOnClick: false,
       });
 
-    map.on("mousemove", "deathsdots", (e) => {
-      console.log('mousemove', e, e.features);
+      map.on("mousemove", "deathsdots", (e) => {
+        console.log("mousemove", e, e.features);
 
-      if (e.features) {
-        map.getCanvas().style.cursor = "pointer";
-        const closestcoords:any = computeclosestcoordsfromevent(e);
+        if (e.features) {
+          map.getCanvas().style.cursor = "pointer";
+          const closestcoords: any = computeclosestcoordsfromevent(e);
 
-        const filteredfeatures = e.features.filter((feature: any) => {
-          return feature.geometry.coordinates[0] === closestcoords[0] && feature.geometry.coordinates[1] === closestcoords[1];
-        });
+          const filteredfeatures = e.features.filter((feature: any) => {
+            return (
+              feature.geometry.coordinates[0] === closestcoords[0] &&
+              feature.geometry.coordinates[1] === closestcoords[1]
+            );
+          });
 
+          // Copy coordinates array.
+          const coordinates = closestcoords.slice();
 
-         // Copy coordinates array.
-         const coordinates = closestcoords.slice();
+          // Ensure that if the map is zoomed out such that multiple
+          // copies of the feature are visible, the popup appears
+          // over the copy being pointed to.
+          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+          }
 
-         // Ensure that if the map is zoomed out such that multiple
-            // copies of the feature are visible, the popup appears
-            // over the copy being pointed to.
-            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-              coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-            }
+          if (filteredfeatures.length > 0) {
+            if (filteredfeatures[0]) {
+              if (filteredfeatures[0].properties) {
+                if (filteredfeatures[0].properties["Death Address"]) {
+                  const address =
+                    filteredfeatures[0].properties["Death Address"];
+                  console.log("filteredfeatures", filteredfeatures);
 
-        if (filteredfeatures.length > 0) {
-          if (filteredfeatures[0]) {
-            if (filteredfeatures[0].properties) {
-            if (filteredfeatures[0].properties["Death Address"]) {
-              const address = filteredfeatures[0].properties["Death Address"];
-              console.log('filteredfeatures', filteredfeatures);
-
-              const allthelineitems = filteredfeatures.map((eachdeath) => {
-                if (eachdeath.properties?.["Death Date"]) {
-                  return `<li>${eachdeath.properties["Death Date"]}
-                  ${(eachdeath.properties.Age && eachdeath.properties.Age != "UNKNOWN") ? `<span class="text-teal-200">${eachdeath.properties.Age} yrs</span>` : ""}
+                  const allthelineitems = filteredfeatures.map((eachdeath) => {
+                    if (eachdeath.properties?.["Death Date"]) {
+                      return `<li>${eachdeath.properties["Death Date"]}
+                  ${
+                    eachdeath.properties.Age &&
+                    eachdeath.properties.Age != "UNKNOWN"
+                      ? `<span class="text-teal-200">${eachdeath.properties.Age} yrs</span>`
+                      : ""
+                  }
                   ${" "}
-                  ${(eachdeath.properties.Race && eachdeath.properties.Race != "UNKNOWN") ? `<span class="text-blue-200">${titleCase(eachdeath.properties.Race.toLowerCase()).replace(/ american/ig, "")}</span>` : ""}
-                  ${eachdeath.properties['Mode'] ? `<br/><span class="text-red-200">${eachdeath.properties["Mode"].toLowerCase()}</span> ` : " "}
+                  ${
+                    eachdeath.properties.Race &&
+                    eachdeath.properties.Race != "UNKNOWN"
+                      ? `<span class="text-blue-200">${titleCase(
+                          eachdeath.properties.Race.toLowerCase()
+                        ).replace(/ american/gi, "")}</span>`
+                      : ""
+                  }
+                  ${
+                    eachdeath.properties["Mode"]
+                      ? `<br/><span class="text-red-200">${eachdeath.properties[
+                          "Mode"
+                        ].toLowerCase()}</span> `
+                      : " "
+                  }
 
-                  ${eachdeath.properties['Cause A'] ? `<span class="text-amber-200">${eachdeath.properties["Cause A"].toLowerCase()}</span>` : ""}
+                  ${
+                    eachdeath.properties["Cause A"]
+                      ? `<span class="text-amber-200">${eachdeath.properties[
+                          "Cause A"
+                        ].toLowerCase()}</span>`
+                      : ""
+                  }
                   
                   </li>`;
-                }
-               
-              })
+                    }
+                  });
 
-              popup.setLngLat(coordinates).setHTML(
-               ` <div>
+                  popup
+                    .setLngLat(coordinates)
+                    .setHTML(
+                      ` <div>
                 <p class="font-semibold">${titleCase(address.toLowerCase())}</p>
-                <p>${filteredfeatures.length} Death${filteredfeatures.length > 1 ? "s" : ""}</p>
+                <p>${filteredfeatures.length} Death${
+                        filteredfeatures.length > 1 ? "s" : ""
+                      }</p>
 
-                <ul class='list-disc'>${allthelineitems.length <= 7 ? allthelineitems.join("") : allthelineitems.splice(0, 7).join("")}</ul>
+                <ul class='list-disc'>${
+                  allthelineitems.length <= 7
+                    ? allthelineitems.join("")
+                    : allthelineitems.splice(0, 7).join("")
+                }</ul>
                 
-                ${allthelineitems.length >= 7 ? `<p class="text-xs text-gray-300">Showing 10 of ${allthelineitems.length} deaths</p>` : ""}
+                ${
+                  allthelineitems.length >= 7
+                    ? `<p class="text-xs text-gray-300">Showing 10 of ${allthelineitems.length} deaths</p>`
+                    : ""
+                }
                 <p >Click for more info</p>
               </div><style>
               .mapboxgl-popup-content {
@@ -689,28 +723,28 @@ data.rows.forEach((eachrow: any) => {
                 flex-direction: column;
               }
               </style>`
-              ).addTo(map);
-            } 
+                    )
+                    .addTo(map);
+                }
+              }
+            }
           }
         }
-         
-        }
-      }
-    });
+      });
 
-    map.on("mouseleave", "deathsdots", () => {
-      //check if the url query string "stopmouseleave" is true
-      //if it is, then don't do anything
-      //if it is not, then do the following
-      /*
+      map.on("mouseleave", "deathsdots", () => {
+        //check if the url query string "stopmouseleave" is true
+        //if it is, then don't do anything
+        //if it is not, then do the following
+        /*
   map.getCanvas().style.cursor = '';
   popup.remove();*/
 
-      if (urlParams.get("stopmouseleave") === null) {
-        map.getCanvas().style.cursor = "";
-        popup.remove();
-      }
-    });
+        if (urlParams.get("stopmouseleave") === null) {
+          map.getCanvas().style.cursor = "";
+          popup.remove();
+        }
+      });
 
       setdoneloadingmap(true);
       setshowtotalarea(window.innerWidth > 640 ? true : false);
@@ -764,41 +798,41 @@ data.rows.forEach((eachrow: any) => {
           latitude: 34,
         },
         marker: true,
-      });         
+      });
 
-          setdatasetloaded(true);       
+      setdatasetloaded(true);
 
-          map.on("mousedown", "councildistrictsselectlayer", (e: any) => {
-            var sourceofcouncildistselect: any = map.getSource(
-              "selected-council-dist"
-            );
+      map.on("mousedown", "councildistrictsselectlayer", (e: any) => {
+        var sourceofcouncildistselect: any = map.getSource(
+          "selected-council-dist"
+        );
 
-            var clickeddata = e.features[0].properties.district;
+        var clickeddata = e.features[0].properties.district;
 
-            var councildistpolygonfound = councildistricts.features.find(
-              (eachDist: any) => eachDist.properties.district === clickeddata
-            );
+        var councildistpolygonfound = councildistricts.features.find(
+          (eachDist: any) => eachDist.properties.district === clickeddata
+        );
 
-            if (sourceofcouncildistselect) {
-              if (councildistpolygonfound) {
-                sourceofcouncildistselect.setData(councildistpolygonfound);
-              }
-            }
-          });
+        if (sourceofcouncildistselect) {
+          if (councildistpolygonfound) {
+            sourceofcouncildistselect.setData(councildistpolygonfound);
+          }
+        }
+      });
 
-          map.on("mouseenter", "shelterslayer", (e: any) => {
-            // Change the cursor style as a UI indicator.
-            map.getCanvas().style.cursor = "pointer";
+      map.on("mouseenter", "shelterslayer", (e: any) => {
+        // Change the cursor style as a UI indicator.
+        map.getCanvas().style.cursor = "pointer";
 
-            var arrayOfSheltersText: any = [];
+        var arrayOfSheltersText: any = [];
 
-            console.log("properties", e.features[0].properties);
+        console.log("properties", e.features[0].properties);
 
-            console.log(JSON.parse(e.features[0].properties.shelterarray));
+        console.log(JSON.parse(e.features[0].properties.shelterarray));
 
-            JSON.parse(e.features[0].properties.shelterarray).forEach(
-              (eachShelter: any) => {
-                arrayOfSheltersText.push(`
+        JSON.parse(e.features[0].properties.shelterarray).forEach(
+          (eachShelter: any) => {
+            arrayOfSheltersText.push(`
           <div class="rounded-sm bg-slate-700 bg-opacity-70 px-1 py-1">
           <strong>${eachShelter.projectname}</strong><br/>
           ${eachShelter.type ? `Type: ${eachShelter.type}<br/>` : ""}
@@ -838,14 +872,14 @@ data.rows.forEach((eachrow: any) => {
         
           </div>
             `);
-              }
-            );
+          }
+        );
 
-            var collateshelters = arrayOfSheltersText.join("");
+        var collateshelters = arrayOfSheltersText.join("");
 
-            // Copy coordinates array.
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            const description = `
+        // Copy coordinates array.
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const description = `
           ${e.features[0].properties.organization_name}<br/>
           ${e.features[0].properties.address}<br/>
           <div className='flexcollate'
@@ -870,18 +904,17 @@ data.rows.forEach((eachrow: any) => {
           </style>
           `;
 
-            // Ensure that if the map is zoomed out such that multiple
-            // copies of the feature are visible, the popup appears
-            // over the copy being pointed to.
-            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-              coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-            }
+        // Ensure that if the map is zoomed out such that multiple
+        // copies of the feature are visible, the popup appears
+        // over the copy being pointed to.
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
 
-            // Populate the popup and set its coordinates
-            // based on the feature found.
-            popup.setLngLat(coordinates).setHTML(description).addTo(map);
-          });
-        
+        // Populate the popup and set its coordinates
+        // based on the feature found.
+        popup.setLngLat(coordinates).setHTML(description).addTo(map);
+      });
 
       var colormarker = new mapboxgl.Marker({
         color: "#41ffca",
@@ -987,8 +1020,6 @@ data.rows.forEach((eachrow: any) => {
       if (urlParams.get("terraindebug")) {
         map.showTerrainWireframe = true;
       }
-
-  
 
       map.addSource("selected-shelter-point", {
         type: "geojson",
@@ -1240,9 +1271,7 @@ data.rows.forEach((eachrow: any) => {
     arrayoffilterables.push(["match", ["get", "occper"], [1], false, true]);
   }
 
-  useEffect(() => {
-  
-  }, [deletemaxoccu, filteredcouncildistricts]);
+  useEffect(() => {}, [deletemaxoccu, filteredcouncildistricts]);
 
   return (
     <div className="flex flex-col h-full w-screen absolute">
@@ -1445,7 +1474,9 @@ data.rows.forEach((eachrow: any) => {
                     <div className="mt-2">
                       <div className="flex flex-row gap-x-1">
                         <div className="flex items-center">
-                         <p className="text-white">Put the race filters here, Kyler!</p>
+                          <p className="text-white">
+                            Put the race filters here, Kyler!
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1497,15 +1528,12 @@ data.rows.forEach((eachrow: any) => {
                               label={
                                 <span className="text-nowrap text-xs">
                                   <span className="text-white">{item}</span>{" "}
-                                 
-                                  
                                 </span>
                               }
                               key={key}
                             />
                           ))}
                         </div>
-                        
                       </Checkbox.Group>
                     </div>
                   )}
