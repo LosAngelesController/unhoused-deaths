@@ -663,6 +663,14 @@ const Home: NextPage = () => {
                   }
                   ${" "}
                   ${
+                    eachdeath.properties.Gender &&
+                    eachdeath.properties.Gender != "UNKNOWN"
+                      ? `<span class="text-purple-200">${
+                          eachdeath.properties.Gender
+                        }</span>`
+                      : ""
+                  }${" "}
+                  ${
                     eachdeath.properties.Race &&
                     eachdeath.properties.Race != "UNKNOWN"
                       ? `<span class="text-blue-200">${titleCase(
@@ -1705,6 +1713,7 @@ const Home: NextPage = () => {
           <span className="text-blue-200"></span>
           <span className="text-amber-200"></span>
           <span className="text-red-200"></span>
+          <span className="text-purple-200"></span>
           <ul className="list-disc"></ul>
         </div>
 
