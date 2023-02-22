@@ -4,7 +4,9 @@ import Image from "next/image";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, createRef } from "react";
 import Slider from "rc-slider";
+import { titleCase } from "title-case";
 
+import {computeclosestcoordsfromevent } from '../components/getclosestcoordsfromevent'
 import { CloseButton } from "../components/CloseButton";
 import { signintrack, uploadMapboxTrack } from "../components/mapboxtrack";
 import TooltipSlider, { handleRender } from "../components/TooltipSlider";
@@ -173,7 +175,7 @@ const Home: NextPage = () => {
   const [showInitInstructions, setshowInitInstructions] = useState(true);
   const [doneloadingmap, setdoneloadingmap] = useState(false);
   const [sliderMonth, setsliderMonthAct] = useState<any>([1, 12]);
-  const [selectedfilteropened, setselectedfilteropened] = useState("occupancy");
+  const [selectedfilteropened, setselectedfilteropened] = useState("race");
   const [deletemaxoccu, setdeletemaxoccu] = useState(false);
   const [datasetloaded, setdatasetloaded] = useState(false);
   const refismaploaded = useRef(false);
@@ -508,6 +510,203 @@ data.rows.forEach((eachrow: any) => {
     window.addEventListener("resize", handleResize);
 
     map.on("load", () => {
+
+    map.addSource("deathssource", {
+      type: 'geojson',
+      data: "/unhouseddeaths.geojson"
+    })
+
+    map.addLayer({
+      'id': 'deathsheatmap',
+      'type': "heatmap",
+      'source': 'deathssource',
+      'paint': {
+        'heatmap-color': [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0,
+          "rgba(0, 0, 255, 0)",
+          0.1,
+          "royalblue",
+          0.3,
+          "cyan",
+          0.5,
+          "lime",
+          0.7,
+          "yellow",
+          1,
+          "red"
+        ],
+        'heatmap-opacity': 1,
+        'heatmap-radius': [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          0,
+          5,
+          11.6,
+          7,
+          15.76,
+          17,
+          22,
+          17
+        ],
+        'heatmap-weight': 1,
+        'heatmap-intensity': 1
+      }
+    })
+
+    map.addLayer({
+      'id': 'deathsdots',
+      'type': "circle",
+      'source': 'deathssource',
+      'paint': {
+        'circle-radius': [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          0,
+          7,
+          22,
+          12,
+          30,
+          15
+        ],
+        'circle-color': "hsl(60, 0%, 100%)",
+        'circle-opacity': 0,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          0,
+          "hsl(0, 0%, 58%)",
+          22,
+          "hsl(0, 4%, 60%)"
+        ],
+        'circle-stroke-opacity': [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          11.46,
+          0,
+          13,
+          0.17,
+          15,
+          1
+        ]
+      },
+      'layout': {
+
+      }
+    });
+
+    //create mousedown trigger
+    map.on("mousedown", "deathsdots", (e) => {
+      console.log('mousedown', e, e.features);
+      if (e.features) {
+        const closestcoords = computeclosestcoordsfromevent(e);
+
+        const filteredfeatures = e.features.filter((feature: any) => {
+          return feature.geometry.coordinates[0] === closestcoords[0] && feature.geometry.coordinates[1] === closestcoords[1];
+        });
+
+        if (filteredfeatures.length > 0) {
+
+        }
+      }
+    });
+
+      // Create a popup, but don't add it to the map yet.
+      const popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+      });
+
+    map.on("mousemove", "deathsdots", (e) => {
+      console.log('mousemove', e, e.features);
+
+      if (e.features) {
+        map.getCanvas().style.cursor = "pointer";
+        const closestcoords:any = computeclosestcoordsfromevent(e);
+
+        const filteredfeatures = e.features.filter((feature: any) => {
+          return feature.geometry.coordinates[0] === closestcoords[0] && feature.geometry.coordinates[1] === closestcoords[1];
+        });
+
+
+         // Copy coordinates array.
+         const coordinates = closestcoords.slice();
+
+         // Ensure that if the map is zoomed out such that multiple
+            // copies of the feature are visible, the popup appears
+            // over the copy being pointed to.
+            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+              coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            }
+
+        if (filteredfeatures.length > 0) {
+          if (filteredfeatures[0]) {
+            if (filteredfeatures[0].properties) {
+            if (filteredfeatures[0].properties["Death Address"]) {
+              const address = filteredfeatures[0].properties["Death Address"];
+              console.log('filteredfeatures', filteredfeatures);
+
+              const allthelineitems = filteredfeatures.map((eachdeath) => {
+                if (eachdeath.properties?.["Death Date"]) {
+                  return `<li>${eachdeath.properties["Death Date"]}
+                  ${(eachdeath.properties.Age && eachdeath.properties.Age != "UNKNOWN") ? `<span class="text-teal-200">${eachdeath.properties.Age} yrs</span>` : ""}
+                  ${eachdeath.properties['Cause A'] ? `<br/><span class="text-amber-200">${eachdeath.properties["Cause A"].toLowerCase()}</span>` : ""}
+                  </li>`;
+                }
+               
+              })
+
+              popup.setLngLat(coordinates).setHTML(
+               ` <div>
+                <p class="font-semibold">${titleCase(address.toLowerCase())}</p>
+                <p>${filteredfeatures.length} Death${filteredfeatures.length > 1 ? "s" : ""}</p>
+
+                <ul class='list-disc'>${allthelineitems.length <= 7 ? allthelineitems.join("") : allthelineitems.splice(0, 7).join("")}</ul>
+                
+                ${allthelineitems.length >= 7 ? `<p class="text-xs text-gray-300">Showing 10 of ${allthelineitems.length} deaths</p>` : ""}
+                <p >Click for more info</p>
+              </div><style>
+              .mapboxgl-popup-content {
+                background: #212121ee;
+                color: #fdfdfd;
+              }
+    
+              .flexcollate {
+                row-gap: 0.5rem;
+                display: flex;
+                flex-direction: column;
+              }
+              </style>`
+              ).addTo(map);
+            } 
+          }
+        }
+         
+        }
+      }
+    });
+
+    map.on("mouseleave", "deathsdots", () => {
+      //check if the url query string "stopmouseleave" is true
+      //if it is, then don't do anything
+      //if it is not, then do the following
+      /*
+  map.getCanvas().style.cursor = '';
+  popup.remove();*/
+
+      if (urlParams.get("stopmouseleave") === null) {
+        map.getCanvas().style.cursor = "";
+        popup.remove();
+      }
+    });
+
       setdoneloadingmap(true);
       setshowtotalarea(window.innerWidth > 640 ? true : false);
 
@@ -562,12 +761,7 @@ data.rows.forEach((eachrow: any) => {
         marker: true,
       });         
 
-          setdatasetloaded(true);
-
-
-         
-
-       
+          setdatasetloaded(true);       
 
           map.on("mousedown", "councildistrictsselectlayer", (e: any) => {
             var sourceofcouncildistselect: any = map.getSource(
@@ -789,11 +983,7 @@ data.rows.forEach((eachrow: any) => {
         map.showTerrainWireframe = true;
       }
 
-      // Create a popup, but don't add it to the map yet.
-      const popup = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-      });
+  
 
       map.addSource("selected-shelter-point", {
         type: "geojson",
@@ -1046,19 +1236,7 @@ data.rows.forEach((eachrow: any) => {
   }
 
   useEffect(() => {
-    if (doneloadingmap) {
-      const filterinput = JSON.parse(
-        JSON.stringify(["all", ...arrayoffilterables])
-      );
-
-      console.log(filterinput);
-
-      if (mapref.current) {
-        if (doneloadingmap === true) {
-          mapref.current.setFilter("shelterslayer", filterinput);
-        }
-      }
-    }
+  
   }, [deletemaxoccu, filteredcouncildistricts]);
 
   return (
@@ -1233,15 +1411,15 @@ data.rows.forEach((eachrow: any) => {
                 <div className="gap-x-0 flex flex-row w-full pr-8">
                   <button
                     onClick={() => {
-                      setselectedfilteropened("occupancy");
+                      setselectedfilteropened("race");
                     }}
                     className={`px-2 border-b-2 py-1  font-semibold ${
-                      selectedfilteropened === "occupancy"
+                      selectedfilteropened === "race"
                         ? "border-[#41ffca] text-[#41ffca]"
                         : "hover:border-white border-transparent text-gray-50"
                     }`}
                   >
-                    Occupancy
+                    Race
                   </button>
 
                   <button
@@ -1258,25 +1436,11 @@ data.rows.forEach((eachrow: any) => {
                   </button>
                 </div>
                 <div className="flex flex-col">
-                  {selectedfilteropened === "occupancy" && (
+                  {selectedfilteropened === "race" && (
                     <div className="mt-2">
                       <div className="flex flex-row gap-x-1">
                         <div className="flex items-center">
-                          <input
-                            id="deleteMaxOccu"
-                            type="checkbox"
-                            checked={deletemaxoccu}
-                            onChange={(e) => {
-                              setdeletemaxoccu(e.target.checked);
-                            }}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <label
-                            htmlFor="deleteMaxOccu"
-                            className="ml-2 text-sm font-medium text-gray-300"
-                          >
-                            Hide Full
-                          </label>
+                         <p className="text-white">Put the race filters here, Kyler!</p>
                         </div>
                       </div>
                     </div>
@@ -1328,34 +1492,15 @@ data.rows.forEach((eachrow: any) => {
                               label={
                                 <span className="text-nowrap text-xs">
                                   <span className="text-white">{item}</span>{" "}
-                                  <span className="text-blue-300">
-                                    {parseInt(
-                                      bedsavailableperdist[String(item)]
-                                    ).toLocaleString("en-US")}
-                                  </span>
-                                  <span className="text-blue-300">{"/"}</span>
-                                  <span className="text-blue-400">
-                                    {parseInt(
-                                      totalbedsperdist[String(item)]
-                                    ).toLocaleString("en-US")}
-                                  </span>{" "}
-                                  <span className="text-green-400">
-                                    {parseInt(
-                                      sheltersperdist[String(item)]
-                                    ).toLocaleString("en-US")}
-                                  </span>
+                                 
+                                  
                                 </span>
                               }
                               key={key}
                             />
                           ))}
                         </div>
-                        <p className="italic text-xs text-white">
-                          CD{" "}
-                          <span className="text-blue-300">available beds/</span>
-                          <span className="text-blue-400">total beds</span>{" "}
-                          <span className="text-green-400">locations</span>
-                        </p>
+                        
                       </Checkbox.Group>
                     </div>
                   )}
@@ -1520,6 +1665,12 @@ data.rows.forEach((eachrow: any) => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="hidden">
+          <span className="text-teal-200"></span>
+          <span className="text-amber-200"></span>
+          <ul className="list-disc"></ul>
         </div>
 
         <div ref={divRef} style={{}} className="map-container w-full h-full " />
