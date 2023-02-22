@@ -665,7 +665,7 @@ const Home: NextPage = () => {
                   ${
                     eachdeath.properties.Gender &&
                     eachdeath.properties.Gender != "UNKNOWN"
-                      ? `<span class="text-purple-200">${eachdeath.properties.Gender}</span>`
+                      ? `<span class="text-sky-400">${eachdeath.properties.Gender}</span>`
                       : ""
                   }${" "}
                   ${
@@ -684,12 +684,12 @@ const Home: NextPage = () => {
                         ].toLowerCase()}</span>`
                       : ""
                   }${" "}${
-                    eachdeath.properties["Event Place"]
-                      ? `<span class="text-pink-400">${eachdeath.properties[
-                          "Event Place"
-                        ].toLowerCase()}</span>`
-                      : ""
-                  }
+                        eachdeath.properties["Event Place"]
+                          ? `<span class="text-pink-400">${eachdeath.properties[
+                              "Event Place"
+                            ].toLowerCase()}</span>`
+                          : ""
+                      }
 
                   ${
                     eachdeath.properties["Mode"]
