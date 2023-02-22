@@ -683,6 +683,12 @@ const Home: NextPage = () => {
                           "Death Place"
                         ].toLowerCase()}</span>`
                       : ""
+                  }${" "}${
+                    eachdeath.properties["Event Place"]
+                      ? `<span class="text-pink-400">${eachdeath.properties[
+                          "Event Place"
+                        ].toLowerCase()}</span>`
+                      : ""
                   }
 
                   ${
@@ -1721,7 +1727,7 @@ const Home: NextPage = () => {
           <span className="text-amber-200"></span>
           <span className="text-red-200"></span>
           <span className="text-purple-200"></span>
-          
+
           <span className="text-pink-200"></span>
           <ul className="list-disc"></ul>
         </div>
