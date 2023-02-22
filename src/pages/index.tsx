@@ -665,9 +665,7 @@ const Home: NextPage = () => {
                   ${
                     eachdeath.properties.Gender &&
                     eachdeath.properties.Gender != "UNKNOWN"
-                      ? `<span class="text-purple-200">${
-                          eachdeath.properties.Gender
-                        }</span>`
+                      ? `<span class="text-purple-200">${eachdeath.properties.Gender}</span>`
                       : ""
                   }${" "}
                   ${
@@ -678,6 +676,15 @@ const Home: NextPage = () => {
                         ).replace(/ american/gi, "")}</span>`
                       : ""
                   }
+
+                  ${
+                    eachdeath.properties["Death Place"]
+                      ? `<br/><span class="text-pink-200">${eachdeath.properties[
+                          "Death Place"
+                        ].toLowerCase()}</span>`
+                      : ""
+                  }
+
                   ${
                     eachdeath.properties["Mode"]
                       ? `<br/><span class="text-red-200">${eachdeath.properties[
@@ -1714,6 +1721,8 @@ const Home: NextPage = () => {
           <span className="text-amber-200"></span>
           <span className="text-red-200"></span>
           <span className="text-purple-200"></span>
+          
+          <span className="text-pink-200"></span>
           <ul className="list-disc"></ul>
         </div>
 
