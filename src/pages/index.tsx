@@ -657,7 +657,12 @@ data.rows.forEach((eachrow: any) => {
                 if (eachdeath.properties?.["Death Date"]) {
                   return `<li>${eachdeath.properties["Death Date"]}
                   ${(eachdeath.properties.Age && eachdeath.properties.Age != "UNKNOWN") ? `<span class="text-teal-200">${eachdeath.properties.Age} yrs</span>` : ""}
-                  ${eachdeath.properties['Cause A'] ? `<br/><span class="text-amber-200">${eachdeath.properties["Cause A"].toLowerCase()}</span>` : ""}
+                  ${" "}
+                  ${(eachdeath.properties.Race && eachdeath.properties.Race != "UNKNOWN") ? `<span class="text-blue-200">${titleCase(eachdeath.properties.Race.toLowerCase()).replace(/ american/ig, "")}</span>` : ""}
+                  ${eachdeath.properties['Mode'] ? `<br/><span class="text-red-200">${eachdeath.properties["Mode"].toLowerCase()}</span> ` : " "}
+
+                  ${eachdeath.properties['Cause A'] ? `<span class="text-amber-200">${eachdeath.properties["Cause A"].toLowerCase()}</span>` : ""}
+                  
                   </li>`;
                 }
                
@@ -1669,7 +1674,9 @@ data.rows.forEach((eachrow: any) => {
 
         <div className="hidden">
           <span className="text-teal-200"></span>
+          <span className="text-blue-200"></span>
           <span className="text-amber-200"></span>
+          <span className="text-red-200"></span>
           <ul className="list-disc"></ul>
         </div>
 
