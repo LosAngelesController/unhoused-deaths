@@ -89,40 +89,41 @@ var councilpopulations: any = {
 };
 
 const councilcount: any = {
-  "1":	152,
-  "2":	49,
-  "3":	35,
-  "4":	41,
-  '5':57,
-  '6':84,
-  '7':44,
-  '8':55,
-  '9':60,
-  '10':	45,
-  '11':	48,
-  '12':	28,
-  "13":	84,
-  "14":	323,
-  "15":	62
-  
+  "1": 152,
+  "2": 49,
+  "3": 35,
+  "4": 41,
+  "5": 57,
+  "6": 84,
+  "7": 44,
+  "8": 55,
+  "9": 60,
+  "10": 45,
+  "11": 48,
+  "12": 28,
+  "13": 84,
+  "14": 323,
+  "15": 62,
 };
 
 const filterableraces: any = {
-  "AMERICAN INDIAN":	3,
-"ARMENIAN":	1,
-"ASIAN":	8,
-"BLACK":	355,
-"CAUCASIAN":	348,
-"EAST INDIAN":	1,
-"FILIPINO":	5,
-"HAWAIIAN":	3,
-"HISPANIC/LATIN AMERICAN"	:422,
-"KOREAN":	1,
-"MIDDLE EASTERN":	6,
-"PACIFIC ISLANDER"	:1,
-"UNKNOWN":	12,
-"VIETNAMESE" :1,
-}
+  "AMERICAN INDIAN": 3,
+  ARMENIAN: 1,
+  ASIAN: 8,
+  BLACK: 355,
+  CAUCASIAN: 348,
+  "EAST INDIAN": 1,
+  FILIPINO: 5,
+  HAWAIIAN: 3,
+  "HISPANIC/LATIN AMERICAN": 422,
+  KOREAN: 1,
+  "MIDDLE EASTERN": 6,
+  "PACIFIC ISLANDER": 1,
+  UNKNOWN: 12,
+  VIETNAMESE: 1,
+};
+
+const filterableraceskeys = Object.keys(filterableraces);
 
 const createdbycount: any = {
   BOE: 1,
@@ -198,7 +199,9 @@ const Home: NextPage = () => {
   const [datasetloaded, setdatasetloaded] = useState(false);
   const refismaploaded = useRef(false);
   const [sheltersperdist, setsheltersperdist] = useState<any>({});
-  const [filteredraces, setfilteredraces] = useState<string[]>(Object.entries(filterableraces).map((eachrace)=>eachrace[0]));
+  const [filteredraces, setfilteredraces] = useState<string[]>(
+    Object.entries(filterableraces).map((eachrace) => eachrace[0])
+  );
   const [totalbedsperdist, settotalbedsperdist] = useState<any>({});
   const [bedsavailableperdist, setbedsavailableperdist] = useState<any>({});
   const [filterpanelopened, setfilterpanelopened] =
@@ -212,6 +215,15 @@ const Home: NextPage = () => {
       setfilteredcouncildistricts(["99999"]);
     } else {
       setfilteredcouncildistricts(input);
+    }
+  };
+
+  const setfilteredracepre = (input: string[]) => {
+    console.log("inputvalidator", input);
+    if (input.length === 0) {
+      setfilteredraces(["99999"]);
+    } else {
+      setfilteredraces(input);
     }
   };
 
@@ -337,42 +349,39 @@ const Home: NextPage = () => {
   var [hasStartedControls, setHasStartedControls] = useState(false);
 
   useEffect(() => {
-    
-  let arrayoffilterables: any = [];
+    let arrayoffilterables: any = [];
 
-  arrayoffilterables.push([
-    "match",
-    ["get", "CD#"],
-    filteredcouncildistricts.map((x) => String(x)),
-    true,
-    false,
-  ]);
+    arrayoffilterables.push([
+      "match",
+      ["get", "CD#"],
+      filteredcouncildistricts.map((x) => String(x)),
+      true,
+      false,
+    ]);
 
-  arrayoffilterables.push([
-    "match",
-    ["get", "Race"],
-    filteredraces.map((x) => String(x)),
-    true,
-    false,
-  ]);
+    arrayoffilterables.push([
+      "match",
+      ["get", "Race"],
+      filteredraces.map((x) => String(x)),
+      true,
+      false,
+    ]);
 
-  if (mapref.current) {
-    if (doneloadingmap) {
-      const filterinput = JSON.parse(
-        JSON.stringify(["all", ...arrayoffilterables])
-      );
+    if (mapref.current) {
+      if (doneloadingmap) {
+        const filterinput = JSON.parse(
+          JSON.stringify(["all", ...arrayoffilterables])
+        );
 
-      console.log(filterinput);
+        console.log(filterinput);
 
-      if (doneloadingmap === true) {
-        mapref.current.setFilter("deathsheatmap", filterinput);
-        mapref.current.setFilter("deathsdots", filterinput);
+        if (doneloadingmap === true) {
+          mapref.current.setFilter("deathsheatmap", filterinput);
+          mapref.current.setFilter("deathsdots", filterinput);
+        }
       }
     }
-  }
-
-
-  }, [filteredcouncildistricts, filteredraces])
+  }, [filteredcouncildistricts, filteredraces]);
 
   function checkHideOrShowTopRightGeocoder() {
     var toprightbox = document.querySelector(".mapboxgl-ctrl-top-right");
@@ -598,7 +607,7 @@ const Home: NextPage = () => {
             ["zoom"],
             0,
             0.1,
-            
+
             7,
             2,
             11.6,
@@ -1329,7 +1338,6 @@ const Home: NextPage = () => {
     }
   }, []);
 
-
   return (
     <div className="flex flex-col h-full w-screen absolute">
       <MantineProvider
@@ -1338,24 +1346,10 @@ const Home: NextPage = () => {
         withNormalizeCSS
       >
         <Head>
-          <link
-            rel="icon"
-            href="https://mejiaforcontroller.com/wp-content/uploads/2020/12/cropped-favicon-1-32x32.png"
-            sizes="32x32"
-          />
-          <link
-            rel="icon"
-            href="https://mejiaforcontroller.com/wp-content/uploads/2020/12/cropped-favicon-1-192x192.png"
-            sizes="192x192"
-          />
-          <link
-            rel="apple-touch-icon"
-            href="https://mejiaforcontroller.com/wp-content/uploads/2020/12/cropped-favicon-1-180x180.png"
-          />
-          <meta
-            name="msapplication-TileImage"
-            content="https://mejiaforcontroller.com/wp-content/uploads/2020/12/cropped-favicon-1-270x270.png"
-          />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon/cropped-favicon-1-32x32.png"/>
+        
+       <link rel="apple-touch-icon" sizes="180x180" href="/favicon/cropped-favicon-1-180x180.png"/>
+       
 
           <meta charSet="utf-8" />
           <meta
@@ -1375,16 +1369,16 @@ const Home: NextPage = () => {
           <meta
             name="twitter:description"
             key="twitterdesc"
-            content="Criteria, Capacity and Occupancy of Los Angeles Homeless Shelters."
+            content="Unhoused Deaths of 2022 in Los Angeles, Filtered by Race & Council District."
           ></meta>
           <meta
             name="twitter:image"
             key="twitterimg"
-            content="https://shelterbeds.lacontroller.io/shelter-thumbnail-min.png"
+            content="https://unhouseddeaths.lacontroller.io/deaths-map.png"
           ></meta>
           <meta
             name="description"
-            content="Criteria, Capacity and Occupancy of Los Angeles Homeless Shelters."
+            content="Unhoused Deaths of 2022 in Los Angeles, Filtered by Race & Council District."
           />
 
           <meta
@@ -1395,11 +1389,11 @@ const Home: NextPage = () => {
           <meta property="og:title" content="Shelter Beds Occupancy | Map" />
           <meta
             property="og:description"
-            content="Criteria, Capacity and Occupancy of Los Angeles Homeless Shelters."
+            content="Unhoused Deaths of 2022 in Los Angeles, Filtered by Race & Council District."
           />
           <meta
             property="og:image"
-            content="https://shelterbeds.lacontroller.io/shelter-thumbnail-min.png"
+            content="https://unhouseddeaths.lacontroller.io/deaths-map.png"
           />
         </Head>
 
@@ -1530,31 +1524,66 @@ const Home: NextPage = () => {
                   {selectedfilteropened === "race" && (
                     <div className="mt-2">
                       <div className="flex flex-row gap-x-1">
-                        <div className="flex items-center">
-                        <Checkbox.Group
-                        value={filteredraces}
-                        onChange={setfilteredraces}
-                      >
-                        {" "}
-                        <div
-                          className={`grid grid-cols-3
-                          } gap-x-4 `}
+                        <button
+                          className="align-middle bg-gray-800 rounded-lg px-1  border border-gray-400 text-sm md:text-base"
+                          onClick={() => {
+                            setfilteredracepre(filterableraceskeys);
+                          }}
                         >
-                          {Object.entries(filterableraces).map((eachEntry) => (
-                            <Checkbox
-                              value={eachEntry[0]}
-                              label={
-                                <span className="text-nowrap text-xs">
-                                  <span className="text-white">{titleCase(eachEntry[0].toLowerCase())}</span>{" "}
-                                  <span>{eachEntry[1]}</span>
-                                </span>
-                              }
-                              key={eachEntry[0]}
-                            />
-                          ))}
-                        </div>
-                      </Checkbox.Group>
-                       
+                          Select All
+                        </button>
+                        <button
+                          className="align-middle bg-gray-800 rounded-lg px-1 text-sm md:text-base border border-gray-400"
+                          onClick={() => {
+                            setfilteredracepre([]);
+                          }}
+                        >
+                          Unselect All
+                        </button>
+                        <button
+                          onClick={() => {
+                            setfilteredracepre(
+                              filterableraceskeys.filter(
+                                (n) => !filteredraces.includes(n)
+                              )
+                            );
+                          }}
+                          className="align-middle bg-gray-800 rounded-lg px-1 text-sm md:text-base  border border-gray-400"
+                        >
+                          Invert
+                        </button>
+                      </div>
+                      <div className="flex flex-row gap-x-1">
+                        <div className="flex items-center">
+                          <Checkbox.Group
+                            value={filteredraces}
+                            onChange={setfilteredracepre}
+                          >
+                            {" "}
+                            <div
+                              className={`grid grid-cols-3
+                          } gap-x-4 `}
+                            >
+                              {Object.entries(filterableraces).map(
+                                (eachEntry) => (
+                                  <Checkbox
+                                    value={eachEntry[0]}
+                                    label={
+                                      <span className="text-nowrap text-xs">
+                                        <span className="text-white">
+                                          {titleCase(
+                                            eachEntry[0].toLowerCase()
+                                          )}
+                                        </span>{" "}
+                                        <span>{eachEntry[1]}</span>
+                                      </span>
+                                    }
+                                    key={eachEntry[0]}
+                                  />
+                                )
+                              )}
+                            </div>
+                          </Checkbox.Group>
                         </div>
                       </div>
                     </div>
@@ -1605,7 +1634,8 @@ const Home: NextPage = () => {
                               value={item}
                               label={
                                 <span className="text-nowrap text-xs">
-                                  <span className="text-white">{item}</span>{" "}<span>{councilcount[String(item)]}</span>
+                                  <span className="text-white">{item}</span>{" "}
+                                  <span>{councilcount[String(item)]}</span>
                                 </span>
                               }
                               key={key}
@@ -1663,8 +1693,6 @@ const Home: NextPage = () => {
                     }
                   }}
                 />
-
-              
               </div>
             </div>
           </div>
