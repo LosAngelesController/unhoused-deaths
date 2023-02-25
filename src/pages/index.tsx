@@ -89,22 +89,40 @@ var councilpopulations: any = {
 };
 
 const councilcount: any = {
-  "13": 6380,
-  "11": 5350,
-  "5": 5102,
-  "2": 5063,
-  "3": 4338,
-  "6": 4050,
-  "10": 3961,
-  "14": 3920,
-  "1": 3905,
-  "9": 3892,
-  "12": 3243,
-  "4": 2942,
-  "7": 2689,
-  "8": 2332,
-  "15": 1681,
+  "1":	152,
+  "2":	49,
+  "3":	35,
+  "4":	41,
+  '5':57,
+  '6':84,
+  '7':44,
+  '8':55,
+  '9':60,
+  '10':	45,
+  '11':	48,
+  '12':	28,
+  "13":	84,
+  "14":	323,
+  "15":	62
+  
 };
+
+const filterableraces: any = {
+  "AMERICAN INDIAN":	3,
+"ARMENIAN":	1,
+"ASIAN":	8,
+"BLACK":	355,
+"CAUCASIAN":	348,
+"EAST INDIAN":	1,
+"FILIPINO":	5,
+"HAWAIIAN":	3,
+"HISPANIC/LATIN AMERICAN"	:422,
+"KOREAN":	1,
+"MIDDLE EASTERN":	6,
+"PACIFIC ISLANDER"	:1,
+"UNKNOWN":	12,
+"VIETNAMESE" :1,
+}
 
 const createdbycount: any = {
   BOE: 1,
@@ -180,6 +198,7 @@ const Home: NextPage = () => {
   const [datasetloaded, setdatasetloaded] = useState(false);
   const refismaploaded = useRef(false);
   const [sheltersperdist, setsheltersperdist] = useState<any>({});
+  const [filteredraces, setfilteredraces] = useState<string[]>(Object.entries(filterableraces).map((eachrace)=>eachrace[0]));
   const [totalbedsperdist, settotalbedsperdist] = useState<any>({});
   const [bedsavailableperdist, setbedsavailableperdist] = useState<any>({});
   const [filterpanelopened, setfilterpanelopened] =
@@ -316,6 +335,44 @@ const Home: NextPage = () => {
   }
 
   var [hasStartedControls, setHasStartedControls] = useState(false);
+
+  useEffect(() => {
+    
+  let arrayoffilterables: any = [];
+
+  arrayoffilterables.push([
+    "match",
+    ["get", "CD#"],
+    filteredcouncildistricts.map((x) => String(x)),
+    true,
+    false,
+  ]);
+
+  arrayoffilterables.push([
+    "match",
+    ["get", "Race"],
+    filteredraces.map((x) => String(x)),
+    true,
+    false,
+  ]);
+
+  if (mapref.current) {
+    if (doneloadingmap) {
+      const filterinput = JSON.parse(
+        JSON.stringify(["all", ...arrayoffilterables])
+      );
+
+      console.log(filterinput);
+
+      if (doneloadingmap === true) {
+        mapref.current.setFilter("deathsheatmap", filterinput);
+        mapref.current.setFilter("deathsdots", filterinput);
+      }
+    }
+  }
+
+
+  }, [filteredcouncildistricts, filteredraces])
 
   function checkHideOrShowTopRightGeocoder() {
     var toprightbox = document.querySelector(".mapboxgl-ctrl-top-right");
@@ -540,7 +597,10 @@ const Home: NextPage = () => {
             ["linear"],
             ["zoom"],
             0,
-            5,
+            0.1,
+            
+            7,
+            2,
             11.6,
             7,
             15.76,
@@ -698,15 +758,6 @@ const Home: NextPage = () => {
                         ].toLowerCase()}</span> `
                       : " "
                   }
-
-                  ${
-                    eachdeath.properties["Cause A"]
-                      ? `<span class="text-amber-200">${eachdeath.properties[
-                          "Cause A"
-                        ].toLowerCase()}</span>`
-                      : ""
-                  }
-                  
                   </li>`;
                     }
                   });
@@ -1278,21 +1329,6 @@ const Home: NextPage = () => {
     }
   }, []);
 
-  let arrayoffilterables: any = [];
-
-  arrayoffilterables.push([
-    "match",
-    ["get", "cd"],
-    filteredcouncildistricts.map((x) => String(x)),
-    true,
-    false,
-  ]);
-
-  if (deletemaxoccu === true) {
-    arrayoffilterables.push(["match", ["get", "occper"], [1], false, true]);
-  }
-
-  useEffect(() => {}, [deletemaxoccu, filteredcouncildistricts]);
 
   return (
     <div className="flex flex-col h-full w-screen absolute">
@@ -1495,9 +1531,30 @@ const Home: NextPage = () => {
                     <div className="mt-2">
                       <div className="flex flex-row gap-x-1">
                         <div className="flex items-center">
-                          <p className="text-white">
-                            Put the race filters here, Kyler!
-                          </p>
+                        <Checkbox.Group
+                        value={filteredraces}
+                        onChange={setfilteredraces}
+                      >
+                        {" "}
+                        <div
+                          className={`grid grid-cols-3
+                          } gap-x-4 `}
+                        >
+                          {Object.entries(filterableraces).map((eachEntry) => (
+                            <Checkbox
+                              value={eachEntry[0]}
+                              label={
+                                <span className="text-nowrap text-xs">
+                                  <span className="text-white">{titleCase(eachEntry[0].toLowerCase())}</span>{" "}
+                                  <span>{eachEntry[1]}</span>
+                                </span>
+                              }
+                              key={eachEntry[0]}
+                            />
+                          ))}
+                        </div>
+                      </Checkbox.Group>
+                       
                         </div>
                       </div>
                     </div>
@@ -1548,7 +1605,7 @@ const Home: NextPage = () => {
                               value={item}
                               label={
                                 <span className="text-nowrap text-xs">
-                                  <span className="text-white">{item}</span>{" "}
+                                  <span className="text-white">{item}</span>{" "}<span>{councilcount[String(item)]}</span>
                                 </span>
                               }
                               key={key}
@@ -1607,115 +1664,7 @@ const Home: NextPage = () => {
                   }}
                 />
 
-                {shelterselected != null && (
-                  <div className="text-xs">
-                    <p className="font-bold">
-                      {shelterselected.properties.organization_name}
-                    </p>
-                    <p>{shelterselected.properties.address}</p>
-                    <div className="flex flex-row gap-x-2 my-1">
-                      <a
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full px-2 py-1 text-white bg-blue-500"
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          `${shelterselected.properties["address"]} Los Angeles, CA`
-                        )}`}
-                      >
-                        View on Google Maps
-                      </a>
-                      <p className="bg-gray-800 px-1 py-1 rounded-sm">
-                        CD {shelterselected.properties.cd}
-                      </p>
-                      <p className="bg-gray-800 px-1 py-1 rounded-sm">
-                        SPA {shelterselected.properties.spa}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col gap-y-2 ">
-                      {shelterselected.properties.contact_info && (
-                        <p>
-                          Contact: {shelterselected.properties.contact_info}
-                        </p>
-                      )}
-                      {shelterselected.properties.website && (
-                        <p>
-                          <a
-                            className="underline text-mejito"
-                            href={shelterselected.properties.website}
-                          >
-                            {shelterselected.properties.website}
-                          </a>
-                        </p>
-                      )}
-
-                      {JSON.parse(shelterselected.properties.shelterarray).map(
-                        (eachShelter: any, index: number) => (
-                          <div
-                            key={index}
-                            className="rounded-sm bg-slate-700 bg-opacity-90 px-1 py-1"
-                          >
-                            <span className="font-bold">
-                              {eachShelter.projectname}
-                            </span>
-                            <br />
-                            {eachShelter.type ? (
-                              <>
-                                Type: {eachShelter.type}
-                                <br />
-                              </>
-                            ) : (
-                              ""
-                            )}
-
-                            <p className="font-semibold">
-                              {eachShelter.total_beds} beds
-                              {" | "}
-                              {eachShelter.beds_available} beds available
-                            </p>
-
-                            {eachShelter.male_available ? (
-                              <>
-                                <p>
-                                  {eachShelter.male_available} male beds
-                                  available
-                                </p>
-                              </>
-                            ) : (
-                              ""
-                            )}
-                            {eachShelter.female_available ? (
-                              <p>
-                                {eachShelter.female_available} female beds
-                                available
-                              </p>
-                            ) : (
-                              ""
-                            )}
-                            {eachShelter.criteria ? (
-                              <p>Criteria: {eachShelter.criteria}</p>
-                            ) : (
-                              ""
-                            )}
-                            {eachShelter.last_updated && (
-                              <p className="italic font-semibold">
-                                Last Updated{" "}
-                                {new Date(
-                                  eachShelter.last_updated
-                                ).toLocaleDateString("default", {
-                                  weekday: "short",
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                              </p>
-                            )}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )}
+              
               </div>
             </div>
           </div>
