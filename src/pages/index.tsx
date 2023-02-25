@@ -723,7 +723,7 @@ const Home: NextPage = () => {
 
                   const allthelineitems = filteredfeatures.map((eachdeath) => {
                     if (eachdeath.properties?.["Death Date"]) {
-                      return `<li>${eachdeath.properties["Death Date"]}
+                      return `<li class="leading-none  my-1">${eachdeath.properties["Death Date"]}
                   ${
                     eachdeath.properties.Age &&
                     eachdeath.properties.Age != "UNKNOWN"
@@ -780,7 +780,7 @@ const Home: NextPage = () => {
                         filteredfeatures.length > 1 ? "s" : ""
                       }</p>
 
-                <ul class='list-disc'>${
+                <ul class='list-disc leading-none'>${
                   allthelineitems.length <= 7
                     ? allthelineitems.join("")
                     : allthelineitems.splice(0, 7).join("")
@@ -791,10 +791,9 @@ const Home: NextPage = () => {
                     ? `<p class="text-xs text-gray-300">Showing 10 of ${allthelineitems.length} deaths</p>`
                     : ""
                 }
-                <p >Click for more info</p>
               </div><style>
               .mapboxgl-popup-content {
-                background: #212121ee;
+                background: #212121e0;
                 color: #fdfdfd;
               }
     
@@ -1346,10 +1345,18 @@ const Home: NextPage = () => {
         withNormalizeCSS
       >
         <Head>
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon/cropped-favicon-1-32x32.png"/>
-        
-       <link rel="apple-touch-icon" sizes="180x180" href="/favicon/cropped-favicon-1-180x180.png"/>
-       
+          <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon/cropped-favicon-1-32x32.png"
+          />
+
+          <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/favicon/cropped-favicon-1-180x180.png"
+          />
 
           <meta charSet="utf-8" />
           <meta
@@ -1703,7 +1710,7 @@ const Home: NextPage = () => {
           <span className="text-blue-200"></span>
           <span className="text-amber-200"></span>
           <span className="text-red-200"></span>
-          <span className="text-purple-200"></span>
+          <span className="text-purple-200 leading-none my-1"></span>
 
           <span className="text-pink-200"></span>
           <ul className="list-disc"></ul>
