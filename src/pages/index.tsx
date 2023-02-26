@@ -744,7 +744,9 @@ const Home: NextPage = () => {
                     eachdeath.properties.Race != "UNKNOWN"
                       ? `<span class="text-blue-200">${titleCase(
                           eachdeath.properties.Race.toLowerCase()
-                        ).replace(/ american/gi, "").replace(/latin/,"Latin")}</span>`
+                        )
+                          .replace(/ american/gi, "")
+                          .replace(/latin/, "Latin")}</span>`
                       : ""
                   }
 
@@ -1593,8 +1595,11 @@ const Home: NextPage = () => {
                               )}
                             </div>
                           </Checkbox.Group>
-                          <p className="text-gray-200 text-sm">Data including categories for race set by L.A. County Medical-Examiner Coroner</p>
-                        </div>
+                         
+                        </div> <p className="text-gray-200 text-sm">
+                            Data including categories for race set by L.A.
+                            County Medical-Examiner Coroner
+                          </p>
                       </div>
                     </div>
                   )}
