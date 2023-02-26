@@ -1596,11 +1596,11 @@ const Home: NextPage = () => {
                             </div>
                           </Checkbox.Group>
                         </div>{" "}
-                       
-                      </div> <p className="text-gray-200 text-sm">
-                          Data including categories for race set by L.A. County
-                          Medical-Examiner Coroner
-                        </p>
+                      </div>{" "}
+                      <p className="text-gray-200 text-xs">
+                        Data including categories for race set by L.A. County
+                        Medical-Examiner Coroner
+                      </p>
                     </div>
                   )}
                   {selectedfilteropened === "cd" && (
