@@ -723,7 +723,9 @@ const Home: NextPage = () => {
 
                   const allthelineitems = filteredfeatures.map((eachdeath) => {
                     if (eachdeath.properties?.["Death Date"]) {
-                      return `<li class="leading-none  my-1">${eachdeath.properties["Death Date"]}
+                      return `<li class="leading-none  my-1">${
+                        eachdeath.properties["Death Date"]
+                      }
                   ${
                     eachdeath.properties.Age &&
                     eachdeath.properties.Age != "UNKNOWN"
@@ -742,7 +744,7 @@ const Home: NextPage = () => {
                     eachdeath.properties.Race != "UNKNOWN"
                       ? `<span class="text-blue-200">${titleCase(
                           eachdeath.properties.Race.toLowerCase()
-                        ).replace(/ american/gi, "")}</span>`
+                        ).replace(/ american/gi, "").replace(/latin/,"Latin")}</span>`
                       : ""
                   }
 
@@ -1417,7 +1419,7 @@ const Home: NextPage = () => {
                 color: "#ffffff",
               }}
             >
-              <strong className="">Unhoused Deaths in LA</strong>
+              <strong className="">2022 Unhoused Deaths in City of LA</strong>
             </div>
 
             <div
@@ -1580,7 +1582,7 @@ const Home: NextPage = () => {
                                         <span className="text-white">
                                           {titleCase(
                                             eachEntry[0].toLowerCase()
-                                          )}
+                                          ).replace(/latin/gi, "Latin")}
                                         </span>{" "}
                                         <span>{eachEntry[1]}</span>
                                       </span>
@@ -1591,6 +1593,7 @@ const Home: NextPage = () => {
                               )}
                             </div>
                           </Checkbox.Group>
+                          <p className="text-gray-200 text-sm">Data including categories for race set by L.A. County Medical-Examiner Coroner</p>
                         </div>
                       </div>
                     </div>
