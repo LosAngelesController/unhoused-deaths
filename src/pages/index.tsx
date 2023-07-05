@@ -514,7 +514,7 @@ const Home: NextPage = () => {
     //import locations from './features.geojson'
 
     mapboxgl.accessToken =
-      "pk.eyJ1IjoiY29tcmFkZWt5bGVyIiwiYSI6ImNrdjBkOXNyeDdscnoycHE2cDk4aWJraTIifQ.77Gid9mgpEdLpFszO5n4oQ";
+      "pk.eyJ1Ijoia2VubmV0aG1lamlhIiwiYSI6ImNsZG1oYnpxNDA2aTQzb2tkYXU2ZWc1b3UifQ.PxO_XgMo13klJ3mQw1QxlQ";
 
     const formulaForZoom = () => {
       if (typeof window != "undefined") {
@@ -536,11 +536,9 @@ const Home: NextPage = () => {
 
     var mapparams: any = {
       container: divRef.current, // container ID
-      //affordablehousing2022-dev-copy
-      style: "mapbox://styles/comradekyler/cld95p0s6004001qibmrpbjgd", // style URL (THIS IS STREET VIEW)
-      //mapbox://styles/comradekyler/cl5c3eukn00al15qxpq4iugtn
-      //affordablehousing2022-dev-copy-copy
-      //  style: 'mapbox://styles/comradekyler/cl5c3eukn00al15qxpq4iugtn?optimize=true', // style URL
+
+      //mapbox://styles/comradekyler/cld95p0s6004001qibmrpbjgd
+      style: "mapbox://styles/kennethmejia/cljq9yguy006101rd2l38cslr",  
       center: [-118.41, 34], // starting position [lng, lat]
       zoom: formulaForZoom(), // starting zoom
     };
@@ -581,7 +579,7 @@ const Home: NextPage = () => {
       map.addLayer({
         id: "deathsheatmap",
         type: "heatmap",
-        source: "deathssource",
+        source: "kennethmejia.c8jd9h2x",
         paint: {
           "heatmap-color": [
             "interpolate",
