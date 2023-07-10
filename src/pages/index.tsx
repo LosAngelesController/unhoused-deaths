@@ -7,14 +7,14 @@ import Slider from "rc-slider";
 import { titleCase } from "title-case";
 
 import { computeclosestcoordsfromevent } from "../components/getclosestcoordsfromevent";
-import { CloseButton } from "../components/CloseButton";
+// import { CloseButton } from "../components/CloseButton";
 import { signintrack, uploadMapboxTrack } from "../components/mapboxtrack";
 import TooltipSlider, { handleRender } from "../components/TooltipSlider";
 import { getAuth, signInWithCustomToken } from "firebase/auth";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import MapboxLanguage from "@mapbox/mapbox-gl-language";
 import Nav from "../components/nav";
-//import { CloseButton } from "@/components/CloseButton";
+import { CloseButton } from "@/components/CloseButton";
 import { MantineProvider, Checkbox } from "@mantine/core";
 import React, { useEffect, useState, useRef } from "react";
 import { initializeApp } from "firebase/app";
@@ -41,6 +41,7 @@ import { assertDeclareExportAllDeclaration } from "@babel/types";
 import { GeoJsonProperties, MultiPolygon, Polygon } from "geojson";
 import { Set } from "typescript";
 
+const newhouse = require('./newunhouseddeaths.json')
 function isTouchScreen() {
   return window.matchMedia("(hover: none)").matches;
 }
@@ -350,7 +351,7 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     let arrayoffilterables: any = [];
-
+debugger
     arrayoffilterables.push([
       "match",
       ["get", "CD#"],
@@ -538,7 +539,8 @@ const Home: NextPage = () => {
       container: divRef.current, // container ID
 
       //mapbox://styles/comradekyler/cld95p0s6004001qibmrpbjgd
-      style: "mapbox://styles/kennethmejia/cljq9yguy006101rd2l38cslr",  
+      // mapbox://styles/kennethmejia/cljq9yguy006101rd2l38cslr
+      style: "mapbox://styles/mapbox/dark-v10",
       center: [-118.41, 34], // starting position [lng, lat]
       zoom: formulaForZoom(), // starting zoom
     };
@@ -573,13 +575,13 @@ const Home: NextPage = () => {
     map.on("load", () => {
       map.addSource("deathssource", {
         type: "geojson",
-        data: "/unhouseddeaths.geojson",
+        data: newhouse,
       });
 
       map.addLayer({
         id: "deathsheatmap",
         type: "heatmap",
-        source: "kennethmejia.c8jd9h2x",
+        source: "deathssource",
         paint: {
           "heatmap-color": [
             "interpolate",
