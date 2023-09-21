@@ -195,7 +195,6 @@ const Home: NextPage = () => {
   const [filterpanelopened, setfilterpanelopened] =
     useState(shouldfilteropeninit);
 
-
   const setfilteredcouncildistrictspre = (input: string[]) => {
     console.log("inputvalidator", input);
     if (input.length === 0) {
@@ -236,7 +235,6 @@ const Home: NextPage = () => {
   datadogRum.init(datadogconfig);
 
   datadogRum.startSessionReplayRecording();
-
 
   var [hasStartedControls, setHasStartedControls] = useState(false);
 
@@ -302,8 +300,6 @@ const Home: NextPage = () => {
   };
 
   const divRef: any = React.useRef<HTMLDivElement>(null);
-
- 
 
   useEffect(() => {
     console.log("map div", divRef);
