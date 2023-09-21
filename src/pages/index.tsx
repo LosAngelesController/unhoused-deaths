@@ -177,37 +177,24 @@ const Home: NextPage = () => {
     (eachItem) => String(eachItem)
   );
 
-  const [createdby, setcreatedby] = useState<string[]>(listofcreatedbyoptions);
   const [filteredcouncildistricts, setfilteredcouncildistricts] =
     useState<string[]>(listofcouncildists);
 
   const shouldfilteropeninit =
     typeof window != "undefined" ? window.innerWidth >= 640 : false;
   const [showtotalarea, setshowtotalarea] = useState(false);
-  let [disclaimerOpen, setDisclaimerOpen] = useState(false);
-  const touchref = useRef<any>(null);
-  const isLoggedInRef = useRef(false);
-  let [housingaddyopen, sethousingaddyopen] = useState(false);
   var mapref: any = useRef(null);
   const okaydeletepoints: any = useRef(null);
-  var [metric, setmetric] = useState(false);
-  const [showInitInstructions, setshowInitInstructions] = useState(true);
   const [doneloadingmap, setdoneloadingmap] = useState(false);
   const [sliderMonth, setsliderMonthAct] = useState<any>([1, 12]);
   const [selectedfilteropened, setselectedfilteropened] = useState("race");
-  const [deletemaxoccu, setdeletemaxoccu] = useState(false);
   const [datasetloaded, setdatasetloaded] = useState(false);
-  const refismaploaded = useRef(false);
-  const [sheltersperdist, setsheltersperdist] = useState<any>({});
   const [filteredraces, setfilteredraces] = useState<string[]>(
     Object.entries(filterableraces).map((eachrace) => eachrace[0])
   );
-  const [totalbedsperdist, settotalbedsperdist] = useState<any>({});
-  const [bedsavailableperdist, setbedsavailableperdist] = useState<any>({});
   const [filterpanelopened, setfilterpanelopened] =
     useState(shouldfilteropeninit);
 
-  const [mapboxloaded, setmapboxloaded] = useState(false);
 
   const setfilteredcouncildistrictspre = (input: string[]) => {
     console.log("inputvalidator", input);
@@ -227,57 +214,7 @@ const Home: NextPage = () => {
     }
   };
 
-  const sheltersperdistcompute = (data: any) => {
-    const sheltersperdist: any = {};
-
-    const locationcountperdist: any = {};
-
-    data.rows.forEach((eachrow: any) => {
-      if (typeof sheltersperdist[eachrow.cd] === "undefined") {
-        sheltersperdist[eachrow.cd] = new Set();
-      }
-
-      sheltersperdist[eachrow.cd].add(String(eachrow.address));
-    });
-
-    Object.entries(sheltersperdist).forEach(
-      ([cdnumber, shelterset]: [string, any]) => {
-        locationcountperdist[cdnumber] = shelterset.size;
-      }
-    );
-
-    setsheltersperdist(locationcountperdist);
-
-    const shelterbedstotal = data.rows.reduce((acc: any, obj: any) => {
-      const key = String(obj.cd);
-
-      if (!acc[key]) {
-        acc[key] = obj.total_beds;
-      }
-      acc[key] = acc[key] + obj.total_beds;
-
-      return acc;
-    }, {});
-
-    settotalbedsperdist(shelterbedstotal);
-
-    const shelterbedsavaliable = data.rows.reduce((acc: any, obj: any) => {
-      const key = String(obj.cd);
-
-      if (!acc[key]) {
-        acc[key] = obj.beds_available;
-      }
-      acc[key] = acc[key] + obj.beds_available;
-
-      return acc;
-    }, {});
-
-    setbedsavailableperdist(shelterbedsavaliable);
-  };
-
   const [shelterselected, setshelterselected] = useState<any>(null);
-
-  const [user, loading, error] = useAuthState(auth);
 
   const datadogconfig: any = {
     applicationId: "54ed9846-68b0-4811-a47a-7330cf1828a0",
@@ -300,51 +237,6 @@ const Home: NextPage = () => {
 
   datadogRum.startSessionReplayRecording();
 
-  const setsliderMonth = (event: Event, newValue: number | number[]) => {
-    setsliderMonthAct(newValue as number[]);
-  };
-
-  const setsliderMonthVerTwo = (input: any) => {
-    console.log(input);
-    setsliderMonthAct(input);
-  };
-
-  function turfify(polygon: any) {
-    var turffedpolygon;
-
-    console.log("polygon on line 100", polygon);
-
-    if (polygon.geometry.type == "Polygon") {
-      turffedpolygon = turf.polygon(polygon.geometry.coordinates);
-    } else {
-      turffedpolygon = turf.multiPolygon(polygon.geometry.coordinates);
-    }
-
-    return turffedpolygon;
-  }
-
-  function polygonInWhichCd(polygon: any) {
-    if (typeof polygon.properties.name === "string") {
-      if (cacheofcdsfromnames[polygon.properties.name]) {
-        return cacheofcdsfromnames[polygon.properties.name];
-      } else {
-        var turffedpolygon = turfify(polygon);
-
-        const answerToReturn = councildistricts.features.find(
-          (eachItem: any) => {
-            //turf sucks for not having type checking, bypasses compile error Property 'booleanIntersects' does not exist on type 'TurfStatic'.
-            //yes it works!!!! it's just missing types
-            // @ts-ignore: Unreachable code error
-            return turf.booleanIntersects(turfify(eachItem), turffedpolygon);
-          }
-        );
-
-        cacheofcdsfromnames[polygon.properties.name] = answerToReturn;
-
-        return answerToReturn;
-      }
-    }
-  }
 
   var [hasStartedControls, setHasStartedControls] = useState(false);
 
@@ -411,97 +303,7 @@ const Home: NextPage = () => {
 
   const divRef: any = React.useRef<HTMLDivElement>(null);
 
-  function convertDataFromBackend(data: any) {
-    /*
-        var featuresarray = data.rows.map((eachRow:any) => {
-          return {
-            "type": "Feature",
-      "properties": {
-        ...eachRow
-      },
-      "geometry": {
-        "coordinates": [
-          eachRow.lng,
-         eachRow.lat
-        ],
-        "type": "Point"
-          }
-
-        }*/
-
-    var objectbylocation: any = {};
-
-    data.rows.forEach((eachRow: any) => {
-      const uniq = `${eachRow.lat}` + `${eachRow.lng}`;
-
-      if (objectbylocation[uniq] === undefined) {
-        objectbylocation[uniq] = {};
-      }
-
-      if (eachRow.total_beds === null) {
-        eachRow.total_beds = 0;
-      }
-
-      if (eachRow.beds_available === null) {
-        eachRow.beds_available = 0;
-      }
-
-      if (objectbylocation[uniq].total_beds === undefined) {
-        objectbylocation[uniq].total_beds = eachRow.total_beds;
-      } else {
-        objectbylocation[uniq].total_beds += eachRow.total_beds;
-      }
-
-      if (objectbylocation[uniq].beds_available === undefined) {
-        objectbylocation[uniq].beds_available = eachRow.beds_available;
-      } else {
-        objectbylocation[uniq].beds_available += eachRow.beds_available;
-      }
-
-      objectbylocation[uniq].occper =
-        1 -
-        objectbylocation[uniq].beds_available /
-          objectbylocation[uniq].total_beds;
-
-      objectbylocation[uniq].organization_name = eachRow.organization_name;
-      objectbylocation[uniq].lat = eachRow.lat;
-      objectbylocation[uniq].lng = eachRow.lng;
-      objectbylocation[uniq].address = eachRow.address;
-      objectbylocation[uniq].spa = eachRow.spa;
-      objectbylocation[uniq].cd = eachRow.cd;
-
-      if (objectbylocation[uniq].shelterarray === undefined) {
-        objectbylocation[uniq].shelterarray = [];
-      }
-      objectbylocation[uniq].shelterarray.push(eachRow);
-    });
-
-    console.log(objectbylocation);
-
-    const featuresarray = Object.values(objectbylocation).map(
-      (eachLocation: any) => {
-        return {
-          type: "Feature",
-          properties: {
-            ...eachLocation,
-          },
-          geometry: {
-            coordinates: [eachLocation.lng, eachLocation.lat],
-            type: "Point",
-          },
-        };
-      }
-    );
-
-    console.log(featuresarray);
-
-    const geojsonsdflsf: any = {
-      type: "FeatureCollection",
-      features: featuresarray,
-    };
-
-    return geojsonsdflsf;
-  }
+ 
 
   useEffect(() => {
     console.log("map div", divRef);
@@ -1349,19 +1151,6 @@ const Home: NextPage = () => {
         withNormalizeCSS
       >
         <Head>
-          <link
-            rel="icon"
-            type="image/png"
-            sizes="32x32"
-            href="/favicon/cropped-favicon-1-32x32.png"
-          />
-
-          <link
-            rel="apple-touch-icon"
-            sizes="180x180"
-            href="/favicon/cropped-favicon-1-180x180.png"
-          />
-
           <meta charSet="utf-8" />
           <meta
             name="viewport"
