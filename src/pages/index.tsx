@@ -1132,7 +1132,7 @@ const Home: NextPage = () => {
           <meta
             name="twitter:image"
             key="twitterimg"
-            content="https://unhouseddeaths.lacontroller.io/deaths-map.png"
+            content="https://unhouseddeaths.lacontroller.app/deaths-map.png"
           ></meta>
           <meta
             name="description"
@@ -1141,7 +1141,7 @@ const Home: NextPage = () => {
 
           <meta
             property="og:url"
-            content="https://unhouseddeaths.lacontroller.io/"
+            content="https://unhouseddeaths.lacontroller.app/"
           />
           <meta property="og:type" content="website" />
           <meta property="og:title" content="Shelter Beds Occupancy | Map" />
@@ -1151,7 +1151,7 @@ const Home: NextPage = () => {
           />
           <meta
             property="og:image"
-            content="https://unhouseddeaths.lacontroller.io/deaths-map.png"
+            content="https://unhouseddeaths.lacontroller.app/deaths-map.png"
           />
         </Head>
 
