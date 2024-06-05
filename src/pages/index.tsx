@@ -1,52 +1,23 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import Image from "next/image";
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, createRef } from "react";
-import Slider from "rc-slider";
 import { titleCase } from "title-case";
-
 import { computeclosestcoordsfromevent } from "../components/getclosestcoordsfromevent";
-// import { CloseButton } from "../components/CloseButton";
 import { signintrack, uploadMapboxTrack } from "../components/mapboxtrack";
-import TooltipSlider, { handleRender } from "../components/TooltipSlider";
-import { getAuth, signInWithCustomToken } from "firebase/auth";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import MapboxLanguage from "@mapbox/mapbox-gl-language";
 import Nav from "../components/nav";
 import { CloseButton } from "@/components/CloseButton";
 import { MantineProvider, Checkbox } from "@mantine/core";
 import React, { useEffect, useState, useRef } from "react";
-import { initializeApp } from "firebase/app";
-
-import Icon from "@mdi/react";
-import { mdiPlay } from "@mdi/js";
-import { mdiPause, mdiSkipNext, mdiSkipPrevious } from "@mdi/js";
-
 import CouncilDist from "./CouncilDistricts.json";
-import { auth, signInWithGoogle, signOutOfApp } from "./../components/firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
 
 const councildistricts = require("./CouncilDistricts.json");
 const citybounds = require("./citybounds.json");
-// @ts-ignore: Unreachable code error
-import * as turf from "@turf/turf";
-import { datadogRum } from "@datadog/browser-rum";
 
 // added the following 6 lines.
 import mapboxgl from "mapbox-gl";
 
-import { assertDeclareExportAllDeclaration } from "@babel/types";
-
-import { GeoJsonProperties, MultiPolygon, Polygon } from "geojson";
-import { Set } from "typescript";
-
-const newhouse = require('./newunhouseddeaths.json')
-function isTouchScreen() {
-  return window.matchMedia("(hover: none)").matches;
-}
-
-var cacheofcdsfromnames: any = {};
+const newhouse = require("./newunhouseddeaths.json");
 
 function getLang() {
   if (navigator.languages != undefined) return navigator.languages[0];
@@ -216,32 +187,30 @@ const Home: NextPage = () => {
 
   const [shelterselected, setshelterselected] = useState<any>(null);
 
-  const datadogconfig: any = {
-    applicationId: "54ed9846-68b0-4811-a47a-7330cf1828a0",
-    clientToken: "pub428d48e3143310cf6a9dd00003773f12",
-    site: "datadoghq.com",
-    service: "beds",
-    env: "prod",
-    // Specify a version number to identify the deployed version of your application in Datadog
-    // version: '1.0.0',
-
-    sessionSampleRate: 100,
-    sessionReplaySampleRate: 100,
-    trackUserInteractions: true,
-    trackResources: true,
-    trackLongTasks: true,
-    defaultPrivacyLevel: "allow",
-  };
-
-  datadogRum.init(datadogconfig);
-
-  datadogRum.startSessionReplayRecording();
-
   var [hasStartedControls, setHasStartedControls] = useState(false);
+
+  const [mapboxConfig, setMapboxConfig] = useState<{
+    mapboxToken: string;
+    mapboxStyle: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchMapboxConfig = async () => {
+      try {
+        const response = await fetch("/api/mapboxConfig");
+        const data = await response.json();
+        setMapboxConfig(data);
+      } catch (error) {
+        console.error("Error fetching Mapbox config:", error);
+      }
+    };
+
+    fetchMapboxConfig();
+  }, []);
 
   useEffect(() => {
     let arrayoffilterables: any = [];
-debugger
+    debugger;
     arrayoffilterables.push([
       "match",
       ["get", "CD#"],
@@ -305,225 +274,216 @@ debugger
   useEffect(() => {
     console.log("map div", divRef);
 
-    if (divRef.current) {
-      console.log("app render");
-    }
+    if (mapboxConfig && divRef.current) {
+      mapboxgl.accessToken = mapboxConfig.mapboxToken;
 
-    // mapboxgl.workerClass = require('worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker').default;
-    //import locations from './features.geojson'
-
-    mapboxgl.accessToken =
-      "pk.eyJ1Ijoia2VubmV0aG1lamlhIiwiYSI6ImNsZG1oYnpxNDA2aTQzb2tkYXU2ZWc1b3UifQ.PxO_XgMo13klJ3mQw1QxlQ";
-
-    const formulaForZoom = () => {
-      if (typeof window != "undefined") {
-        if (window.innerWidth > 700) {
-          return 10;
-        } else {
-          return 9.1;
-        }
-      }
-    };
-
-    const urlParams = new URLSearchParams(
-      typeof window != "undefined" ? window.location.search : ""
-    );
-    const latParam = urlParams.get("lat");
-    const lngParam = urlParams.get("lng");
-    const zoomParam = urlParams.get("zoom");
-    const debugParam = urlParams.get("debug");
-
-    var mapparams: any = {
-      container: divRef.current, // container ID
-
-      //mapbox://styles/comradekyler/cld95p0s6004001qibmrpbjgd
-      // mapbox://styles/kennethmejia/cljq9yguy006101rd2l38cslr
-      style: "mapbox://styles/mapbox/dark-v10",
-      center: [-118.41, 34], // starting position [lng, lat]
-      zoom: formulaForZoom(), // starting zoom
-    };
-
-    const map = new mapboxgl.Map(mapparams);
-    mapref.current = map;
-
-    var rtldone = false;
-
-    try {
-      if (rtldone === false && hasStartedControls === false) {
-        setHasStartedControls(true);
-        //multilingual support
-        //right to left allows arabic rendering
-        mapboxgl.setRTLTextPlugin(
-          "https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.10.1/mapbox-gl-rtl-text.js",
-          (callbackinfo: any) => {
-            console.log(callbackinfo);
-            rtldone = true;
-          }
-        );
-      }
-
-      const language = new MapboxLanguage();
-      map.addControl(language);
-    } catch (error) {
-      console.error(error);
-    }
-
-    window.addEventListener("resize", handleResize);
-
-    map.on("load", () => {
-      map.addSource("deathssource", {
-        type: "geojson",
-        data: newhouse,
-      });
-
-      map.addLayer({
-        id: "deathsheatmap",
-        type: "heatmap",
-        source: "deathssource",
-        paint: {
-          "heatmap-color": [
-            "interpolate",
-            ["linear"],
-            ["heatmap-density"],
-            0,
-            "rgba(0, 0, 255, 0)",
-            0.1,
-            "royalblue",
-            0.3,
-            "cyan",
-            0.5,
-            "lime",
-            0.7,
-            "yellow",
-            1,
-            "red",
-          ],
-          "heatmap-opacity": 1,
-          "heatmap-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            0,
-            0.1,
-
-            7,
-            2,
-            11.6,
-            7,
-            15.76,
-            17,
-            22,
-            17,
-          ],
-          "heatmap-weight": 1,
-          "heatmap-intensity": 1,
-        },
-      });
-
-      map.addLayer({
-        id: "deathsdots",
-        type: "circle",
-        source: "deathssource",
-        paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            0,
-            7,
-            22,
-            12,
-            30,
-            15,
-          ],
-          "circle-color": "hsl(60, 0%, 100%)",
-          "circle-opacity": 0,
-          "circle-stroke-width": 2,
-          "circle-stroke-color": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            0,
-            "hsl(0, 0%, 58%)",
-            22,
-            "hsl(0, 4%, 60%)",
-          ],
-          "circle-stroke-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            11.46,
-            0,
-            13,
-            0.17,
-            15,
-            1,
-          ],
-        },
-        layout: {},
-      });
-
-      //create mousedown trigger
-      map.on("mousedown", "deathsdots", (e) => {
-        console.log("mousedown", e, e.features);
-        if (e.features) {
-          const closestcoords = computeclosestcoordsfromevent(e);
-
-          const filteredfeatures = e.features.filter((feature: any) => {
-            return (
-              feature.geometry.coordinates[0] === closestcoords[0] &&
-              feature.geometry.coordinates[1] === closestcoords[1]
-            );
-          });
-
-          if (filteredfeatures.length > 0) {
+      const formulaForZoom = () => {
+        if (typeof window != "undefined") {
+          if (window.innerWidth > 700) {
+            return 10;
+          } else {
+            return 9.1;
           }
         }
-      });
+      };
 
-      // Create a popup, but don't add it to the map yet.
-      const popup = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-      });
+      const urlParams = new URLSearchParams(
+        typeof window != "undefined" ? window.location.search : ""
+      );
+      const latParam = urlParams.get("lat");
+      const lngParam = urlParams.get("lng");
+      const zoomParam = urlParams.get("zoom");
+      const debugParam = urlParams.get("debug");
 
-      map.on("mousemove", "deathsdots", (e) => {
-        console.log("mousemove", e, e.features);
+      var mapparams: any = {
+        container: divRef.current, // container ID
+        style: mapboxConfig.mapboxStyle,
+        center: [-118.41, 34], // starting position [lng, lat]
+        zoom: formulaForZoom(), // starting zoom
+      };
 
-        if (e.features) {
-          map.getCanvas().style.cursor = "pointer";
-          const closestcoords: any = computeclosestcoordsfromevent(e);
+      const map = new mapboxgl.Map(mapparams);
+      mapref.current = map;
 
-          const filteredfeatures = e.features.filter((feature: any) => {
-            return (
-              feature.geometry.coordinates[0] === closestcoords[0] &&
-              feature.geometry.coordinates[1] === closestcoords[1]
-            );
-          });
+      var rtldone = false;
 
-          // Copy coordinates array.
-          const coordinates = closestcoords.slice();
+      try {
+        if (rtldone === false && hasStartedControls === false) {
+          setHasStartedControls(true);
+          //multilingual support
+          //right to left allows arabic rendering
+          mapboxgl.setRTLTextPlugin(
+            "https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.10.1/mapbox-gl-rtl-text.js",
+            (callbackinfo: any) => {
+              console.log(callbackinfo);
+              rtldone = true;
+            }
+          );
+        }
 
-          // Ensure that if the map is zoomed out such that multiple
-          // copies of the feature are visible, the popup appears
-          // over the copy being pointed to.
-          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        const language = new MapboxLanguage();
+        map.addControl(language);
+      } catch (error) {
+        console.error(error);
+      }
+
+      window.addEventListener("resize", handleResize);
+
+      map.on("load", () => {
+        map.addSource("deathssource", {
+          type: "geojson",
+          data: newhouse,
+        });
+
+        map.addLayer({
+          id: "deathsheatmap",
+          type: "heatmap",
+          source: "deathssource",
+          paint: {
+            "heatmap-color": [
+              "interpolate",
+              ["linear"],
+              ["heatmap-density"],
+              0,
+              "rgba(0, 0, 255, 0)",
+              0.1,
+              "royalblue",
+              0.3,
+              "cyan",
+              0.5,
+              "lime",
+              0.7,
+              "yellow",
+              1,
+              "red",
+            ],
+            "heatmap-opacity": 1,
+            "heatmap-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0,
+              0.1,
+
+              7,
+              2,
+              11.6,
+              7,
+              15.76,
+              17,
+              22,
+              17,
+            ],
+            "heatmap-weight": 1,
+            "heatmap-intensity": 1,
+          },
+        });
+
+        map.addLayer({
+          id: "deathsdots",
+          type: "circle",
+          source: "deathssource",
+          paint: {
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0,
+              7,
+              22,
+              12,
+              30,
+              15,
+            ],
+            "circle-color": "hsl(60, 0%, 100%)",
+            "circle-opacity": 0,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0,
+              "hsl(0, 0%, 58%)",
+              22,
+              "hsl(0, 4%, 60%)",
+            ],
+            "circle-stroke-opacity": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              11.46,
+              0,
+              13,
+              0.17,
+              15,
+              1,
+            ],
+          },
+          layout: {},
+        });
+
+        //create mousedown trigger
+        map.on("mousedown", "deathsdots", (e) => {
+          console.log("mousedown", e, e.features);
+          if (e.features) {
+            const closestcoords = computeclosestcoordsfromevent(e);
+
+            const filteredfeatures = e.features.filter((feature: any) => {
+              return (
+                feature.geometry.coordinates[0] === closestcoords[0] &&
+                feature.geometry.coordinates[1] === closestcoords[1]
+              );
+            });
+
+            if (filteredfeatures.length > 0) {
+            }
           }
+        });
 
-          if (filteredfeatures.length > 0) {
-            if (filteredfeatures[0]) {
-              if (filteredfeatures[0].properties) {
-                if (filteredfeatures[0].properties["Death Address"]) {
-                  const address =
-                    filteredfeatures[0].properties["Death Address"];
-                  console.log("filteredfeatures", filteredfeatures);
+        // Create a popup, but don't add it to the map yet.
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+        });
 
-                  const allthelineitems = filteredfeatures.map((eachdeath) => {
-                    if (eachdeath.properties?.["Death Date"]) {
-                      return `<li class="leading-none  my-1">${
-                        eachdeath.properties["Death Date"]
-                      }
+        map.on("mousemove", "deathsdots", (e) => {
+          console.log("mousemove", e, e.features);
+
+          if (e.features) {
+            map.getCanvas().style.cursor = "pointer";
+            const closestcoords: any = computeclosestcoordsfromevent(e);
+
+            const filteredfeatures = e.features.filter((feature: any) => {
+              return (
+                feature.geometry.coordinates[0] === closestcoords[0] &&
+                feature.geometry.coordinates[1] === closestcoords[1]
+              );
+            });
+
+            // Copy coordinates array.
+            const coordinates = closestcoords.slice();
+
+            // Ensure that if the map is zoomed out such that multiple
+            // copies of the feature are visible, the popup appears
+            // over the copy being pointed to.
+            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+              coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            }
+
+            if (filteredfeatures.length > 0) {
+              if (filteredfeatures[0]) {
+                if (filteredfeatures[0].properties) {
+                  if (filteredfeatures[0].properties["Death Address"]) {
+                    const address =
+                      filteredfeatures[0].properties["Death Address"];
+                    console.log("filteredfeatures", filteredfeatures);
+
+                    const allthelineitems = filteredfeatures.map(
+                      (eachdeath) => {
+                        if (eachdeath.properties?.["Death Date"]) {
+                          return `<li class="leading-none  my-1">${
+                            eachdeath.properties["Death Date"]
+                          }
                   ${
                     eachdeath.properties.Age &&
                     eachdeath.properties.Age != "UNKNOWN"
@@ -555,12 +515,12 @@ debugger
                         ].toLowerCase()}</span>`
                       : ""
                   }${" "}${
-                        eachdeath.properties["Event Place"]
-                          ? `<span class="text-pink-400">${eachdeath.properties[
-                              "Event Place"
-                            ].toLowerCase()}</span>`
-                          : ""
-                      }
+                            eachdeath.properties["Event Place"]
+                              ? `<span class="text-pink-400">${eachdeath.properties[
+                                  "Event Place"
+                                ].toLowerCase()}</span>`
+                              : ""
+                          }
 
                   ${
                     eachdeath.properties["Mode"]
@@ -570,17 +530,18 @@ debugger
                       : " "
                   }
                   </li>`;
-                    }
-                  });
+                        }
+                      }
+                    );
 
-                  popup
-                    .setLngLat(coordinates)
-                    .setHTML(
-                      ` <div>
+                    popup
+                      .setLngLat(coordinates)
+                      .setHTML(
+                        ` <div>
                 <p class="font-semibold">${titleCase(address.toLowerCase())}</p>
                 <p>${filteredfeatures.length} Death${
-                        filteredfeatures.length > 1 ? "s" : ""
-                      }</p>
+                          filteredfeatures.length > 1 ? "s" : ""
+                        }</p>
 
                 <ul class='list-disc leading-none'>${
                   allthelineitems.length <= 7
@@ -605,116 +566,116 @@ debugger
                 flex-direction: column;
               }
               </style>`
-                    )
-                    .addTo(map);
+                      )
+                      .addTo(map);
+                  }
                 }
               }
             }
           }
-        }
-      });
+        });
 
-      map.on("mouseleave", "deathsdots", () => {
-        //check if the url query string "stopmouseleave" is true
-        //if it is, then don't do anything
-        //if it is not, then do the following
-        /*
+        map.on("mouseleave", "deathsdots", () => {
+          //check if the url query string "stopmouseleave" is true
+          //if it is, then don't do anything
+          //if it is not, then do the following
+          /*
   map.getCanvas().style.cursor = '';
   popup.remove();*/
 
-        if (urlParams.get("stopmouseleave") === null) {
-          map.getCanvas().style.cursor = "";
-          popup.remove();
-        }
-      });
-
-      setdoneloadingmap(true);
-      setshowtotalarea(window.innerWidth > 640 ? true : false);
-
-      okaydeletepoints.current = () => {
-        try {
-          var affordablepoint: any = map.getSource("selected-home-point");
-          affordablepoint.setData(null);
-        } catch (err) {
-          console.error(err);
-        }
-      };
-
-      const processgeocodereventresult = (eventmapbox: any) => {
-        var singlePointSet: any = map.getSource("single-point");
-
-        singlePointSet.setData({
-          type: "FeatureCollection",
-          features: [
-            {
-              type: "Feature",
-              geometry: eventmapbox.result.geometry,
-            },
-          ],
-        });
-
-        console.log("event.result.geometry", eventmapbox.result.geometry);
-        console.log("geocoderesult", eventmapbox);
-      };
-
-      const processgeocodereventselect = (object: any) => {
-        var coord = object.feature.geometry.coordinates;
-        var singlePointSet: any = map.getSource("single-point");
-
-        singlePointSet.setData({
-          type: "FeatureCollection",
-          features: [
-            {
-              type: "Feature",
-              geometry: object.feature.geometry,
-            },
-          ],
-        });
-      };
-
-      const geocoder: any = new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-        mapboxgl: map,
-        proximity: {
-          longitude: -118.41,
-          latitude: 34,
-        },
-        marker: true,
-      });
-
-      setdatasetloaded(true);
-
-      map.on("mousedown", "councildistrictsselectlayer", (e: any) => {
-        var sourceofcouncildistselect: any = map.getSource(
-          "selected-council-dist"
-        );
-
-        var clickeddata = e.features[0].properties.district;
-
-        var councildistpolygonfound = councildistricts.features.find(
-          (eachDist: any) => eachDist.properties.district === clickeddata
-        );
-
-        if (sourceofcouncildistselect) {
-          if (councildistpolygonfound) {
-            sourceofcouncildistselect.setData(councildistpolygonfound);
+          if (urlParams.get("stopmouseleave") === null) {
+            map.getCanvas().style.cursor = "";
+            popup.remove();
           }
-        }
-      });
+        });
 
-      map.on("mouseenter", "shelterslayer", (e: any) => {
-        // Change the cursor style as a UI indicator.
-        map.getCanvas().style.cursor = "pointer";
+        setdoneloadingmap(true);
+        setshowtotalarea(window.innerWidth > 640 ? true : false);
 
-        var arrayOfSheltersText: any = [];
+        okaydeletepoints.current = () => {
+          try {
+            var affordablepoint: any = map.getSource("selected-home-point");
+            affordablepoint.setData(null);
+          } catch (err) {
+            console.error(err);
+          }
+        };
 
-        console.log("properties", e.features[0].properties);
+        const processgeocodereventresult = (eventmapbox: any) => {
+          var singlePointSet: any = map.getSource("single-point");
 
-        console.log(JSON.parse(e.features[0].properties.shelterarray));
+          singlePointSet.setData({
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                geometry: eventmapbox.result.geometry,
+              },
+            ],
+          });
 
-        JSON.parse(e.features[0].properties.shelterarray).forEach(
-          (eachShelter: any) => {
-            arrayOfSheltersText.push(`
+          console.log("event.result.geometry", eventmapbox.result.geometry);
+          console.log("geocoderesult", eventmapbox);
+        };
+
+        const processgeocodereventselect = (object: any) => {
+          var coord = object.feature.geometry.coordinates;
+          var singlePointSet: any = map.getSource("single-point");
+
+          singlePointSet.setData({
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                geometry: object.feature.geometry,
+              },
+            ],
+          });
+        };
+
+        const geocoder: any = new MapboxGeocoder({
+          accessToken: mapboxgl.accessToken,
+          mapboxgl: map,
+          proximity: {
+            longitude: -118.41,
+            latitude: 34,
+          },
+          marker: true,
+        });
+
+        setdatasetloaded(true);
+
+        map.on("mousedown", "councildistrictsselectlayer", (e: any) => {
+          var sourceofcouncildistselect: any = map.getSource(
+            "selected-council-dist"
+          );
+
+          var clickeddata = e.features[0].properties.district;
+
+          var councildistpolygonfound = councildistricts.features.find(
+            (eachDist: any) => eachDist.properties.district === clickeddata
+          );
+
+          if (sourceofcouncildistselect) {
+            if (councildistpolygonfound) {
+              sourceofcouncildistselect.setData(councildistpolygonfound);
+            }
+          }
+        });
+
+        map.on("mouseenter", "shelterslayer", (e: any) => {
+          // Change the cursor style as a UI indicator.
+          map.getCanvas().style.cursor = "pointer";
+
+          var arrayOfSheltersText: any = [];
+
+          console.log("properties", e.features[0].properties);
+
+          console.log(JSON.parse(e.features[0].properties.shelterarray));
+
+          JSON.parse(e.features[0].properties.shelterarray).forEach(
+            (eachShelter: any) => {
+              arrayOfSheltersText.push(`
           <div class="rounded-sm bg-slate-700 bg-opacity-70 px-1 py-1">
           <strong>${eachShelter.projectname}</strong><br/>
           ${eachShelter.type ? `Type: ${eachShelter.type}<br/>` : ""}
@@ -754,14 +715,14 @@ debugger
         
           </div>
             `);
-          }
-        );
+            }
+          );
 
-        var collateshelters = arrayOfSheltersText.join("");
+          var collateshelters = arrayOfSheltersText.join("");
 
-        // Copy coordinates array.
-        const coordinates = e.features[0].geometry.coordinates.slice();
-        const description = `
+          // Copy coordinates array.
+          const coordinates = e.features[0].geometry.coordinates.slice();
+          const description = `
           ${e.features[0].properties.organization_name}<br/>
           ${e.features[0].properties.address}<br/>
           <div className='flexcollate'
@@ -786,253 +747,94 @@ debugger
           </style>
           `;
 
-        // Ensure that if the map is zoomed out such that multiple
-        // copies of the feature are visible, the popup appears
-        // over the copy being pointed to.
-        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-        }
+          // Ensure that if the map is zoomed out such that multiple
+          // copies of the feature are visible, the popup appears
+          // over the copy being pointed to.
+          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+          }
 
-        // Populate the popup and set its coordinates
-        // based on the feature found.
-        popup.setLngLat(coordinates).setHTML(description).addTo(map);
-      });
+          // Populate the popup and set its coordinates
+          // based on the feature found.
+          popup.setLngLat(coordinates).setHTML(description).addTo(map);
+        });
 
-      var colormarker = new mapboxgl.Marker({
-        color: "#41ffca",
-      });
-
-      const geocoderopt: any = {
-        accessToken: mapboxgl.accessToken,
-        mapboxgl: mapboxgl,
-        marker: {
+        var colormarker = new mapboxgl.Marker({
           color: "#41ffca",
-        },
-      };
+        });
 
-      const geocoder2 = new MapboxGeocoder(geocoderopt);
-      const geocoder3 = new MapboxGeocoder(geocoderopt);
+        const geocoderopt: any = {
+          accessToken: mapboxgl.accessToken,
+          mapboxgl: mapboxgl,
+          marker: {
+            color: "#41ffca",
+          },
+        };
 
-      geocoder.on("result", (event: any) => {
-        processgeocodereventresult(event);
-      });
+        const geocoder2 = new MapboxGeocoder(geocoderopt);
+        const geocoder3 = new MapboxGeocoder(geocoderopt);
 
-      geocoder.on("select", function (object: any) {
-        processgeocodereventselect(object);
-      });
+        geocoder.on("result", (event: any) => {
+          processgeocodereventresult(event);
+        });
 
-      var geocoderId = document.getElementById("geocoder");
+        geocoder.on("select", function (object: any) {
+          processgeocodereventselect(object);
+        });
 
-      if (geocoderId) {
-        console.log("geocoder div found");
+        var geocoderId = document.getElementById("geocoder");
 
-        if (!document.querySelector(".geocoder input")) {
-          geocoderId.appendChild(geocoder3.onAdd(map));
+        if (geocoderId) {
+          console.log("geocoder div found");
 
-          var inputMobile = document.querySelector(".geocoder input");
+          if (!document.querySelector(".geocoder input")) {
+            geocoderId.appendChild(geocoder3.onAdd(map));
 
-          try {
-            var loadboi = document.querySelector(
-              ".mapboxgl-ctrl-geocoder--icon-loading"
-            );
-            if (loadboi) {
-              var brightspin: any = loadboi.firstChild;
-              if (brightspin) {
-                brightspin.setAttribute("style", "fill: #e2e8f0");
+            var inputMobile = document.querySelector(".geocoder input");
+
+            try {
+              var loadboi = document.querySelector(
+                ".mapboxgl-ctrl-geocoder--icon-loading"
+              );
+              if (loadboi) {
+                var brightspin: any = loadboi.firstChild;
+                if (brightspin) {
+                  brightspin.setAttribute("style", "fill: #e2e8f0");
+                }
+                var darkspin: any = loadboi.lastChild;
+                if (darkspin) {
+                  darkspin.setAttribute("style", "fill: #94a3b8");
+                }
               }
-              var darkspin: any = loadboi.lastChild;
-              if (darkspin) {
-                darkspin.setAttribute("style", "fill: #94a3b8");
-              }
+            } catch (err) {
+              console.error(err);
             }
-          } catch (err) {
-            console.error(err);
+
+            if (inputMobile) {
+              inputMobile.addEventListener("focus", () => {
+                //make the box below go away
+              });
+            }
           }
 
-          if (inputMobile) {
-            inputMobile.addEventListener("focus", () => {
-              //make the box below go away
-            });
-          }
-        }
+          geocoder2.on("result", (event: any) => {
+            processgeocodereventresult(event);
+          });
 
-        geocoder2.on("result", (event: any) => {
-          processgeocodereventresult(event);
-        });
+          geocoder2.on("select", function (object: any) {
+            processgeocodereventselect(object);
+          });
 
-        geocoder2.on("select", function (object: any) {
-          processgeocodereventselect(object);
-        });
+          geocoder3.on("result", (event: any) => {
+            processgeocodereventresult(event);
+          });
 
-        geocoder3.on("result", (event: any) => {
-          processgeocodereventresult(event);
-        });
-
-        geocoder3.on("select", function (object: any) {
-          processgeocodereventselect(object);
-        });
-      }
-
-      map.addSource("single-point", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: [],
-        },
-      });
-
-      if (true) {
-        map.addLayer({
-          id: "point",
-          source: "single-point",
-          type: "circle",
-          paint: {
-            "circle-radius": 10,
-            "circle-color": "#41ffca",
-          },
-        });
-      }
-
-      if (debugParam) {
-        map.showTileBoundaries = true;
-        map.showCollisionBoxes = true;
-        map.showPadding = true;
-      }
-
-      if (urlParams.get("terraindebug")) {
-        map.showTerrainWireframe = true;
-      }
-
-      map.addSource("selected-shelter-point", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: [],
-        },
-      });
-
-      map.addSource("selected-park-area", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: [],
-        },
-      });
-
-      if (false) {
-        map.addLayer({
-          id: "selected-park-areas",
-          source: "selected-park-area",
-          type: "line",
-          paint: {
-            "line-color": "#7dd3fc",
-            "line-width": 5,
-            "line-blur": 0,
-          },
-        });
-
-        map.addLayer({
-          id: "selected-park-areasfill",
-          source: "selected-park-area",
-          type: "fill",
-          paint: {
-            "fill-color": "#7dd3fc",
-            "fill-opacity": 0.2,
-          },
-        });
-      }
-
-      map.loadImage("/map-marker.png", (error, image: any) => {
-        if (error) throw error;
-
-        // Add the image to the map style.
-        map.addImage("map-marker", image);
-
-        if (true) {
-          map.addLayer({
-            id: "points-selected-shelter-layer",
-            type: "symbol",
-            source: "selected-shelter-point",
-            paint: {
-              "icon-color": "#41ffca",
-              "icon-translate": [0, -13],
-            },
-            layout: {
-              "icon-image": "map-marker",
-              // get the title name from the source's "title" property
-              "text-allow-overlap": true,
-              "icon-allow-overlap": true,
-              "icon-ignore-placement": true,
-              "text-ignore-placement": true,
-
-              "icon-size": 0.4,
-              "icon-text-fit": "both",
-            },
+          geocoder3.on("select", function (object: any) {
+            processgeocodereventselect(object);
           });
         }
-      });
 
-      if (
-        !document.querySelector(
-          ".mapboxgl-ctrl-top-right > .mapboxgl-ctrl-geocoder"
-        )
-      ) {
-        map.addControl(geocoder2);
-      }
-
-      checkHideOrShowTopRightGeocoder();
-
-      if (true) {
-        map.addLayer(
-          {
-            id: "citybound",
-            type: "line",
-            source: {
-              type: "geojson",
-              data: citybounds,
-            },
-            paint: {
-              "line-color": "#dddddd",
-              "line-opacity": 1,
-              "line-width": 3,
-            },
-          },
-          "road-label"
-        );
-
-        map.addSource("citycouncildist", {
-          type: "geojson",
-          data: councildistricts,
-        });
-
-        map.addLayer(
-          {
-            id: "councildistrictslayer",
-            type: "line",
-            source: "citycouncildist",
-            paint: {
-              "line-color": "#bbbbbb",
-              "line-opacity": 1,
-              "line-width": 2,
-            },
-          },
-          "road-label"
-        );
-
-        map.addLayer(
-          {
-            id: "councildistrictsselectlayer",
-            type: "fill",
-            source: "citycouncildist",
-            paint: {
-              "fill-color": "#000000",
-              "fill-opacity": 0,
-            },
-          },
-          "road-label"
-        );
-
-        map.addSource("selected-council-dist", {
+        map.addSource("single-point", {
           type: "geojson",
           data: {
             type: "FeatureCollection",
@@ -1040,104 +842,264 @@ debugger
           },
         });
 
-        map.addLayer(
-          {
-            id: "selected-council-dist-layer",
-            type: "fill",
-            source: "selected-council-dist",
+        if (true) {
+          map.addLayer({
+            id: "point",
+            source: "single-point",
+            type: "circle",
             paint: {
-              "fill-color": "#bdbdeb",
-              "fill-opacity": 0.1,
+              "circle-radius": 10,
+              "circle-color": "#41ffca",
             },
-          },
-          "road-label"
-        );
+          });
+        }
 
-        map.addLayer(
-          {
-            id: "selected-council-dist-layer",
-            type: "fill",
-            source: "selected-council-dist",
+        if (debugParam) {
+          map.showTileBoundaries = true;
+          map.showCollisionBoxes = true;
+          map.showPadding = true;
+        }
+
+        if (urlParams.get("terraindebug")) {
+          map.showTerrainWireframe = true;
+        }
+
+        map.addSource("selected-shelter-point", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: [],
+          },
+        });
+
+        map.addSource("selected-park-area", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: [],
+          },
+        });
+
+        if (false) {
+          map.addLayer({
+            id: "selected-park-areas",
+            source: "selected-park-area",
+            type: "line",
             paint: {
-              "fill-color": "#bdbdeb",
-              "fill-opacity": 0.09,
+              "line-color": "#7dd3fc",
+              "line-width": 5,
+              "line-blur": 0,
             },
-          },
-          "aeroway-polygon"
-        );
-      }
+          });
 
-      if (hasStartedControls === false) {
-        // Add zoom and rotation controls to the map.
-        map.addControl(new mapboxgl.NavigationControl());
-
-        // Add geolocate control to the map.
-        map.addControl(
-          new mapboxgl.GeolocateControl({
-            positionOptions: {
-              enableHighAccuracy: true,
+          map.addLayer({
+            id: "selected-park-areasfill",
+            source: "selected-park-area",
+            type: "fill",
+            paint: {
+              "fill-color": "#7dd3fc",
+              "fill-opacity": 0.2,
             },
-            // When active the map will receive updates to the device's location as it changes.
-            trackUserLocation: true,
-            // Draw an arrow next to the location dot to indicate which direction the device is heading.
-            showUserHeading: true,
-          })
-        );
+          });
+        }
+
+        map.loadImage("/map-marker.png", (error, image: any) => {
+          if (error) throw error;
+
+          // Add the image to the map style.
+          map.addImage("map-marker", image);
+
+          if (true) {
+            map.addLayer({
+              id: "points-selected-shelter-layer",
+              type: "symbol",
+              source: "selected-shelter-point",
+              paint: {
+                "icon-color": "#41ffca",
+                "icon-translate": [0, -13],
+              },
+              layout: {
+                "icon-image": "map-marker",
+                // get the title name from the source's "title" property
+                "text-allow-overlap": true,
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
+                "text-ignore-placement": true,
+
+                "icon-size": 0.4,
+                "icon-text-fit": "both",
+              },
+            });
+          }
+        });
+
+        if (
+          !document.querySelector(
+            ".mapboxgl-ctrl-top-right > .mapboxgl-ctrl-geocoder"
+          )
+        ) {
+          map.addControl(geocoder2);
+        }
+
+        checkHideOrShowTopRightGeocoder();
+
+        if (true) {
+          map.addLayer(
+            {
+              id: "citybound",
+              type: "line",
+              source: {
+                type: "geojson",
+                data: citybounds,
+              },
+              paint: {
+                "line-color": "#dddddd",
+                "line-opacity": 1,
+                "line-width": 3,
+              },
+            },
+            "road-label"
+          );
+
+          map.addSource("citycouncildist", {
+            type: "geojson",
+            data: councildistricts,
+          });
+
+          map.addLayer(
+            {
+              id: "councildistrictslayer",
+              type: "line",
+              source: "citycouncildist",
+              paint: {
+                "line-color": "#bbbbbb",
+                "line-opacity": 1,
+                "line-width": 2,
+              },
+            },
+            "road-label"
+          );
+
+          map.addLayer(
+            {
+              id: "councildistrictsselectlayer",
+              type: "fill",
+              source: "citycouncildist",
+              paint: {
+                "fill-color": "#000000",
+                "fill-opacity": 0,
+              },
+            },
+            "road-label"
+          );
+
+          map.addSource("selected-council-dist", {
+            type: "geojson",
+            data: {
+              type: "FeatureCollection",
+              features: [],
+            },
+          });
+
+          map.addLayer(
+            {
+              id: "selected-council-dist-layer",
+              type: "fill",
+              source: "selected-council-dist",
+              paint: {
+                "fill-color": "#bdbdeb",
+                "fill-opacity": 0.1,
+              },
+            },
+            "road-label"
+          );
+
+          map.addLayer(
+            {
+              id: "selected-council-dist-layer",
+              type: "fill",
+              source: "selected-council-dist",
+              paint: {
+                "fill-color": "#bdbdeb",
+                "fill-opacity": 0.09,
+              },
+            },
+            "aeroway-polygon"
+          );
+        }
+
+        if (hasStartedControls === false) {
+          // Add zoom and rotation controls to the map.
+          map.addControl(new mapboxgl.NavigationControl());
+
+          // Add geolocate control to the map.
+          map.addControl(
+            new mapboxgl.GeolocateControl({
+              positionOptions: {
+                enableHighAccuracy: true,
+              },
+              // When active the map will receive updates to the device's location as it changes.
+              trackUserLocation: true,
+              // Draw an arrow next to the location dot to indicate which direction the device is heading.
+              showUserHeading: true,
+            })
+          );
+        }
+
+        checkHideOrShowTopRightGeocoder();
+
+        var mapname = "beds";
+
+        map.on("dragstart", (e) => {
+          uploadMapboxTrack({
+            mapname,
+            eventtype: "dragstart",
+            globallng: map.getCenter().lng,
+            globallat: map.getCenter().lat,
+            globalzoom: map.getZoom(),
+          });
+        });
+
+        map.on("dragend", (e) => {
+          uploadMapboxTrack({
+            mapname,
+            eventtype: "dragend",
+            globallng: map.getCenter().lng,
+            globallat: map.getCenter().lat,
+            globalzoom: map.getZoom(),
+          });
+        });
+
+        map.on("zoomstart", (e) => {
+          uploadMapboxTrack({
+            mapname,
+            eventtype: "dragstart",
+            globallng: map.getCenter().lng,
+            globallat: map.getCenter().lat,
+            globalzoom: map.getZoom(),
+          });
+        });
+
+        map.on("zoomend", (e) => {
+          uploadMapboxTrack({
+            mapname,
+            eventtype: "zoomend",
+            globallng: map.getCenter().lng,
+            globallat: map.getCenter().lat,
+            globalzoom: map.getZoom(),
+          });
+        });
+
+        //end of load
+      });
+
+      var getmapboxlogo: any = document.querySelector(".mapboxgl-ctrl-logo");
+
+      if (getmapboxlogo) {
+        getmapboxlogo.remove();
       }
-
-      checkHideOrShowTopRightGeocoder();
-
-      var mapname = "beds";
-
-      map.on("dragstart", (e) => {
-        uploadMapboxTrack({
-          mapname,
-          eventtype: "dragstart",
-          globallng: map.getCenter().lng,
-          globallat: map.getCenter().lat,
-          globalzoom: map.getZoom(),
-        });
-      });
-
-      map.on("dragend", (e) => {
-        uploadMapboxTrack({
-          mapname,
-          eventtype: "dragend",
-          globallng: map.getCenter().lng,
-          globallat: map.getCenter().lat,
-          globalzoom: map.getZoom(),
-        });
-      });
-
-      map.on("zoomstart", (e) => {
-        uploadMapboxTrack({
-          mapname,
-          eventtype: "dragstart",
-          globallng: map.getCenter().lng,
-          globallat: map.getCenter().lat,
-          globalzoom: map.getZoom(),
-        });
-      });
-
-      map.on("zoomend", (e) => {
-        uploadMapboxTrack({
-          mapname,
-          eventtype: "zoomend",
-          globallng: map.getCenter().lng,
-          globallat: map.getCenter().lat,
-          globalzoom: map.getZoom(),
-        });
-      });
-
-      //end of load
-    });
-
-    var getmapboxlogo: any = document.querySelector(".mapboxgl-ctrl-logo");
-
-    if (getmapboxlogo) {
-      getmapboxlogo.remove();
     }
-  }, []);
+  }, [mapboxConfig]);
 
   return (
     <div className="flex flex-col h-full w-screen absolute">
