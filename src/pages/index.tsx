@@ -272,7 +272,7 @@ const Home: NextPage = () => {
   const divRef: any = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    console.log("map div", divRef);
+    // console.log("map div", divRef);
 
     if (mapboxConfig && divRef.current) {
       mapboxgl.accessToken = mapboxConfig.mapboxToken;
