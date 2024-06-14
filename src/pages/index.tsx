@@ -14,7 +14,6 @@ import CouncilDist from "./CouncilDistricts.json";
 const councildistricts = require("./CouncilDistricts.json");
 const citybounds = require("./citybounds.json");
 
-// added the following 6 lines.
 import mapboxgl from "mapbox-gl";
 
 const newhouse = require("./newunhouseddeaths.json");
